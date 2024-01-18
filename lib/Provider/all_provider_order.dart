@@ -224,9 +224,6 @@ class OrderProvider extends ChangeNotifier {
     );
      await myServiceOrderPost.postOrderProductModel(productOrderPostModel);
   }
-
-
-  
 }
 
 class ProductCompanyProviderO extends ChangeNotifier{

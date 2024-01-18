@@ -7,6 +7,7 @@ import 'package:petrolpump/CommonWidgets/colors.dart';
 import 'package:petrolpump/Screens/CreatePage/CustomerOutstanding/customer_outstanding.dart';
 import 'package:petrolpump/Screens/CreatePage/LedgerReport/ledger_report.dart';
 import 'package:petrolpump/Screens/CreatePage/Suppliers/supplier_outstanding.dart';
+import 'package:petrolpump/Screens/CreatePage/TrialStock/trial_stock.dart';
 import 'package:petrolpump/Screens/CreatePage/about.dart';
 import 'package:petrolpump/Screens/CreatePage/Order/create_order_screen.dart';
 import 'package:petrolpump/Screens/CreatePage/Sales/create_sales_screen.dart';
@@ -87,12 +88,16 @@ class _MainPageState extends State<MainPage> {
         return  const SupplierOutstanding(
           title: "Supplier Outstanding",
         );
-      case 7:
+        case 7:
+        return  const TrialStock(
+          title: "Trial Stock",
+        );
+      case 8:
         return const AboutPage(
           title: "About Us",
         );
 
-      case 8:
+      case 9:
         return FutureBuilder(
           future: LogOut.logOut(context),
           builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
@@ -223,16 +228,22 @@ class _DrawerScreenState extends State<DrawerScreen> {
                padding:  EdgeInsets.only(left: 20.sp),
               child: drawerList(FontAwesome.file_pdf_o, "Splr Outstanding", 6),
             ),
+
+             SizedBox(height: 3.sp,),
+             Padding(
+               padding:  EdgeInsets.only(left: 20.sp),
+              child: drawerList(FontAwesome.file_pdf_o, "Trial Stock", 7),
+            ),
               ],
             ),
 
             Padding(
               padding:  EdgeInsets.fromLTRB(5.sp, 15.sp, 0, 5.sp),
-              child: drawerList(MaterialCommunityIcons.contacts, "About Us", 7),
+              child: drawerList(MaterialCommunityIcons.contacts, "About Us", 8),
             ),
             Padding(
               padding:  EdgeInsets.fromLTRB(5.sp, 50.sp, 0, 5.sp),
-              child: drawerList(AntDesign.logout, "LogOut", 8),
+              child: drawerList(AntDesign.logout, "LogOut", 9),
             ),
           ],
         ),

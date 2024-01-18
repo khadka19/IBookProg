@@ -7,6 +7,7 @@ import 'package:pdf/pdf.dart';
 import 'package:petrolpump/API_Services/get_services_order.dart';
 import 'package:petrolpump/API_Services/get_services_sales.dart';
 import 'package:petrolpump/API_Services/ledger_services.dart';
+import 'package:petrolpump/API_Services/role_control.dart';
 import 'package:petrolpump/API_Services/splrOutstanding_services.dart';
 import 'package:petrolpump/CommonWidgets/colors.dart';
 import 'package:petrolpump/CommonWidgets/constants_text.dart';
@@ -51,12 +52,13 @@ class _SupplierOutstandingState extends State<SupplierOutstanding> {
   List<ProductCompanyModel> _productCompanyList = [];
   MyServiceOrder myServiceOrder = MyServiceOrder();
   LRFiscalDateService lrFiscalDateService = LRFiscalDateService();
+  RoleCheckServices roleControlServices = RoleCheckServices();
 
   String selectedValue = "AB"; // Default selected value
 
   ValueNotifier<String> searchCusListner = ValueNotifier<String>('');
-  SupplierListModelDetails _selectedSupplierModel =
-      SupplierListModelDetails(ledgerAddress: '', ledgerId: 0, ledgerName: '', ledgerPan: '');
+  SupplierListModelDetails _selectedSupplierModel = SupplierListModelDetails(
+      ledgerAddress: '', ledgerId: 0, ledgerName: '', ledgerPan: '');
   List<SupplierListModelDetails> filterSuppliers(String searchTextCus) {
     return _supplierList.where((customer) {
       return customer.ledgerName
@@ -92,6 +94,7 @@ class _SupplierOutstandingState extends State<SupplierOutstanding> {
   String currentBlcnString = '0.00';
   MyService myService = MyService();
   SplrOutstandingServices cusOutstandingServices = SplrOutstandingServices();
+  bool isAuthorized = true;
 
   String dropdownvalue = 'Bill Date';
   var items = [
@@ -99,6 +102,19 @@ class _SupplierOutstandingState extends State<SupplierOutstanding> {
     'Dispatch Date',
     'Due Date',
   ];
+
+  void checkRole() async {
+    bool apiResult = await roleControlServices.roleCheckSupplierOutstanding();
+    if (apiResult == true) {
+      setState(() {
+        isAuthorized = true;
+      });
+    } else {
+      setState(() {
+        isAuthorized = false;
+      });
+    }
+  }
 
   Future<String> getCompanyName() async {
     // Retrieve the companyName from preferences or wherever it's stored
@@ -112,7 +128,8 @@ class _SupplierOutstandingState extends State<SupplierOutstanding> {
   void initState() {
     // TODO: implement initState
     super.initState();
-   cusOutstandingServices.getSupplierList().then((customerData) async {
+    checkRole();
+    cusOutstandingServices.getSupplierList().then((customerData) async {
       setState(() {
         _supplierList = customerData; // Store the fetched customer data
       });
@@ -160,393 +177,433 @@ class _SupplierOutstandingState extends State<SupplierOutstanding> {
       supplierOutstandingProvider.selectedAgeingOn = '';
       _shouldResetState = false;
     }
+    double totalInvoiceAmount=0.00;
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.kPrimaryColor,
-        title: Text(widget.title),
-        centerTitle: true,
-        leading: DrawerWidget(),
-        actions: [
-          Row(
-            children: [
-              IconButton(
-                  onPressed: () {
-                    if (supplierOutstandingProvider.ledgerName.isNotEmpty) {
-                      _displayPdf();
-                    } else {
-                      // Show an error message if companyName is null or empty
-                      Utilities.showSnackBar(
-                          context, "First Select a Ledger", false);
-                    }
-                  },
-                  icon: Icon(Icons.picture_as_pdf)),
-              IconButton(
-                  onPressed: () {
-                    filterWidget();
-                  },
-                  icon: Icon(Feather.filter)),
-            ],
-          )
-        ],
-      ),
-      body: Column(
-        children: [
-          SizedBox(
-            height: 10.sp,
-          ),
-          hasDataToDisplay
-              ? Padding(
-                  padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
-                  child: Consumer<SupplierOutstandingProvider>(
-                    builder: (context, value, child) {
-                      var date = DateFormat('yyyy-MM-dd')
-                          .format(value.selectedAsOnDate!);
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                "Ledger Name : ",
-                                style: TextStyle(
-                                  fontSize: 15.sp,
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  value.ledgerName,
-                                  style: TextStyle(
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                          SizedBox(
-                            height: 5.sp,
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                "Date : ",
-                                style: TextStyle(
-                                  fontSize: 15.sp,
-                                ),
-                              ),
-                              Text(
-                                date,
-                                style: TextStyle(
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )
-                            ],
-                          )
-                        ],
-                      );
+        appBar: AppBar(
+          backgroundColor: AppColors.kPrimaryColor,
+          title: Text(widget.title),
+          centerTitle: true,
+          leading: DrawerWidget(),
+          actions: [
+            Row(
+              children: [
+                IconButton(
+                    onPressed: () {
+                      if (supplierOutstandingProvider.ledgerName.isNotEmpty) {
+                        _displayPdf();
+                      } else {
+                        // Show an error message if companyName is null or empty
+                        Utilities.showSnackBar(
+                            context, "First Select a Ledger", false);
+                      }
                     },
+                    icon: Icon(Icons.picture_as_pdf)),
+                IconButton(
+                    onPressed: () {
+                      filterWidget();
+                    },
+                    icon: Icon(Feather.filter)),
+              ],
+            )
+          ],
+        ),
+        body: isAuthorized
+            ? Column(
+                children: [
+                  SizedBox(
+                    height: 10.sp,
                   ),
-                )
-              : SizedBox(),
-          Card(
-            elevation: 5,
-            child: LimitedBox(
-              maxHeight: screenHeight * 0.608,
-              child: Stack(children: [
-                SingleChildScrollView(
-                  controller: _scrollController,
-                  scrollDirection: Axis.vertical,
-                  child: Column(
-                    children: [
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          border: TableBorder.all(
-                            width: 1,
-                            color: Colors.black12,
-                          ),
-                          headingRowColor: MaterialStateColor.resolveWith(
-                            (Set<MaterialState> states) {
-                              if (states.contains(MaterialState.hovered)) {
-                                // Color when the heading row is hovered
-                                return AppColors.kPrimaryColor.withOpacity(0.3);
-                              }
-                              return AppColors.kPrimaryColor; // Default color
+                  hasDataToDisplay
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
+                          child: Consumer<SupplierOutstandingProvider>(
+                            builder: (context, value, child) {
+                              var date = DateFormat('yyyy-MM-dd')
+                                  .format(value.selectedAsOnDate!);
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        "Ledger Name : ",
+                                        style: TextStyle(
+                                          fontSize: 15.sp,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          value.ledgerName,
+                                          style: TextStyle(
+                                            fontSize: 15.sp,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                  SizedBox(
+                                    height: 5.sp,
+                                  ),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        "Date : ",
+                                        style: TextStyle(
+                                          fontSize: 15.sp,
+                                        ),
+                                      ),
+                                      Text(
+                                        date,
+                                        style: TextStyle(
+                                          fontSize: 15.sp,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    ],
+                                  )
+                                ],
+                              );
                             },
                           ),
-                          dataRowHeight: 35.sp,
-                          headingRowHeight: 30.sp,
-                          dividerThickness: 1,
-                          columnSpacing: 10.sp,
-                          showCheckboxColumn: true,
-                          sortAscending: true,
-                          sortColumnIndex: 0,
-                          columns: [
-                            DataColumn(
-                                label: SizedBox(
-                                    child: Text(
-                              'S.N',
-                              style: GoogleFonts.acme(
-                                  color: Colors.white, fontSize: 15.sp),
-                            ))),
-                            DataColumn(
-                                label: SizedBox(
-                                    child: _cusOunstandingList.isNotEmpty
-                                        ? (_fiscalDateList[0].dateMode == "NEP"
-                                            ? Text(
-                                                'Miti',
-                                                style: GoogleFonts.acme(
-                                                    color: Colors.white,
-                                                    fontSize: 15.sp),
-                                              )
-                                            : Text(
-                                                'Date',
-                                                style: GoogleFonts.acme(
-                                                    color: Colors.white,
-                                                    fontSize: 15.sp),
-                                              ))
-                                        : const SizedBox())),
-                            DataColumn(
-                                label: SizedBox(
-                                    child: Text(
-                              'Voucher No.',
-                              style: GoogleFonts.acme(
-                                  color: Colors.white, fontSize: 15.sp),
-                            ))),
-                            DataColumn(
-                                label: SizedBox(
-                                    child: Text(
-                                  'Days',
-                                  style: GoogleFonts.acme(
-                                      color: Colors.white, fontSize: 15.sp),
-                                )),
-                                numeric: true),
-                            DataColumn(
-                                label: SizedBox(
-                                    child: Text(
-                                  'Invoice Amount',
-                                  style: GoogleFonts.acme(
-                                      color: Colors.white, fontSize: 15.sp),
-                                )),
-                                numeric: true),
-                            DataColumn(
-                                label: SizedBox(
-                                    child: Text(
-                                  'Receipt Amount',
-                                  style: GoogleFonts.acme(
-                                      color: Colors.white, fontSize: 15.sp),
-                                )),
-                                numeric: true),
-                            DataColumn(
-                                label: SizedBox(
-                                    child: Text(
-                                  'Balance',
-                                  style: GoogleFonts.acme(
-                                      color: Colors.white, fontSize: 15.sp),
-                                )),
-                                numeric: true),
-                          ],
-                          rows: _cusOunstandingList.map((outstandingData) {
-                            int index =
-                                _cusOunstandingList.indexOf(outstandingData) +
-                                    1;
-                            var a = outstandingData.invoiceAmount;
-                            var b = outstandingData.balance;
-                            var receiptAmount = (a - b);
-                            totalInvoiceAmount = totalInvoiceAmount +
-                                outstandingData.invoiceAmount;
-                            totalBalance = outstandingData.balance;
+                        )
+                      : SizedBox(),
+                  Card(
+                    elevation: 5,
+                    child: LimitedBox(
+                      maxHeight: screenHeight * 0.608,
+                      child: Stack(children: [
+                        SingleChildScrollView(
+                          controller: _scrollController,
+                          scrollDirection: Axis.vertical,
+                          child: Column(
+                            children: [
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: DataTable(
+                                  border: TableBorder.all(
+                                    width: 1,
+                                    color: Colors.black12,
+                                  ),
+                                  headingRowColor:
+                                      MaterialStateColor.resolveWith(
+                                    (Set<MaterialState> states) {
+                                      if (states
+                                          .contains(MaterialState.hovered)) {
+                                        // Color when the heading row is hovered
+                                        return AppColors.kPrimaryColor
+                                            .withOpacity(0.3);
+                                      }
+                                      return AppColors
+                                          .kPrimaryColor; // Default color
+                                    },
+                                  ),
+                                  dataRowHeight: 35.sp,
+                                  headingRowHeight: 30.sp,
+                                  dividerThickness: 1,
+                                  columnSpacing: 10.sp,
+                                  showCheckboxColumn: true,
+                                  sortAscending: true,
+                                  sortColumnIndex: 0,
+                                  columns: [
+                                    DataColumn(
+                                        label: SizedBox(
+                                            child: Text(
+                                      'S.N',
+                                      style: GoogleFonts.acme(
+                                          color: Colors.white, fontSize: 15.sp),
+                                    ))),
+                                    DataColumn(
+                                        label: SizedBox(
+                                            child: _cusOunstandingList
+                                                    .isNotEmpty
+                                                ? (_fiscalDateList[0]
+                                                            .dateMode ==
+                                                        "NEP"
+                                                    ? Text(
+                                                        'Miti',
+                                                        style: GoogleFonts.acme(
+                                                            color: Colors.white,
+                                                            fontSize: 15.sp),
+                                                      )
+                                                    : Text(
+                                                        'Date',
+                                                        style: GoogleFonts.acme(
+                                                            color: Colors.white,
+                                                            fontSize: 15.sp),
+                                                      ))
+                                                : const SizedBox())),
+                                    DataColumn(
+                                        label: SizedBox(
+                                            child: Text(
+                                      'Voucher No.',
+                                      style: GoogleFonts.acme(
+                                          color: Colors.white, fontSize: 15.sp),
+                                    ))),
+                                    DataColumn(
+                                        label: SizedBox(
+                                            child: Text(
+                                          'Days',
+                                          style: GoogleFonts.acme(
+                                              color: Colors.white,
+                                              fontSize: 15.sp),
+                                        )),
+                                        numeric: true),
+                                    DataColumn(
+                                        label: SizedBox(
+                                            child: Text(
+                                          'Invoice Amount',
+                                          style: GoogleFonts.acme(
+                                              color: Colors.white,
+                                              fontSize: 15.sp),
+                                        )),
+                                        numeric: true),
+                                    DataColumn(
+                                        label: SizedBox(
+                                            child: Text(
+                                          'Receipt Amount',
+                                          style: GoogleFonts.acme(
+                                              color: Colors.white,
+                                              fontSize: 15.sp),
+                                        )),
+                                        numeric: true),
+                                    DataColumn(
+                                        label: SizedBox(
+                                            child: Text(
+                                          'Balance',
+                                          style: GoogleFonts.acme(
+                                              color: Colors.white,
+                                              fontSize: 15.sp),
+                                        )),
+                                        numeric: true),
+                                  ],
+                                  rows: _cusOunstandingList
+                                      .map((outstandingData) {
+                                    int index = _cusOunstandingList
+                                            .indexOf(outstandingData) +
+                                        1;
+                                    var a = outstandingData.invoiceAmount;
+                                    var b = outstandingData.balance;
+                                    var receiptAmount = (a - b);
+                                    totalInvoiceAmount = totalInvoiceAmount +
+                                        outstandingData.invoiceAmount;
+                                    totalBalance = outstandingData.balance;
 
-                            return DataRow(cells: [
-                              DataCell(SizedBox(
-                                child: Text(
-                                  index.toString(),
-                                  style: GoogleFonts.aBeeZee(fontSize: 14.sp),
+                                    return DataRow(cells: [
+                                      DataCell(SizedBox(
+                                        child: Text(
+                                          index.toString(),
+                                          style: GoogleFonts.aBeeZee(
+                                              fontSize: 14.sp),
+                                        ),
+                                      )),
+                                      DataCell(SizedBox(
+                                          child: SizedBox(
+                                              child: SingleChildScrollView(
+                                                  scrollDirection:
+                                                      Axis.vertical,
+                                                  child: _cusOunstandingList
+                                                          .isNotEmpty
+                                                      ? (_fiscalDateList[0]
+                                                                  .dateMode ==
+                                                              "NEP"
+                                                          ? Text(
+                                                              outstandingData
+                                                                  .docMiti,
+                                                              style: GoogleFonts
+                                                                  .aBeeZee(
+                                                                      fontSize:
+                                                                          14.sp),
+                                                            )
+                                                          : Text(
+                                                              outstandingData
+                                                                  .docDate,
+                                                              style: GoogleFonts
+                                                                  .aBeeZee(
+                                                                      fontSize:
+                                                                          14.sp),
+                                                            ))
+                                                      : const SizedBox())))),
+                                      DataCell(SizedBox(
+                                          child: SizedBox(
+                                              child: Text(
+                                        outstandingData.docNo,
+                                        style: GoogleFonts.aBeeZee(
+                                            fontSize: 14.sp),
+                                      )))),
+                                      DataCell(SizedBox(
+                                          child: Text(
+                                        outstandingData.docDays.toString(),
+                                        style: GoogleFonts.aBeeZee(
+                                            fontSize: 14.sp),
+                                        textAlign: TextAlign.right,
+                                      ))),
+                                      DataCell(SizedBox(
+                                          child: Text(
+                                        outstandingData.invoiceAmount
+                                            .toString(),
+                                        style: GoogleFonts.aBeeZee(
+                                            fontSize: 14.sp),
+                                        textAlign: TextAlign.right,
+                                      ))),
+                                      DataCell(SizedBox(
+                                          child: Text(
+                                        index == 1 &&
+                                                outstandingData
+                                                        .ledgerBillPayment ==
+                                                    0
+                                            ? receiptAmount.toStringAsFixed(2)
+                                            : "0.00",
+                                        style: GoogleFonts.aBeeZee(
+                                            fontSize: 14.sp),
+                                        textAlign: TextAlign.right,
+                                      ))),
+                                      DataCell(SizedBox(
+                                          child: Text(
+                                        outstandingData.balance.toString(),
+                                        style: GoogleFonts.aBeeZee(
+                                            fontSize: 14.sp),
+                                        textAlign: TextAlign.right,
+                                      ))),
+                                    ]);
+                                  }).toList(),
                                 ),
-                              )),
-                              DataCell(SizedBox(
-                                  child: SizedBox(
-                                      child: SingleChildScrollView(
-                                          scrollDirection: Axis.vertical,
-                                          child: _cusOunstandingList.isNotEmpty
-                                              ? (_fiscalDateList[0].dateMode ==
-                                                      "NEP"
-                                                  ? Text(
-                                                      outstandingData.docMiti,
-                                                      style:
-                                                          GoogleFonts.aBeeZee(
-                                                              fontSize: 14.sp),
-                                                    )
-                                                  : Text(
-                                                      outstandingData.docDate,
-                                                      style:
-                                                          GoogleFonts.aBeeZee(
-                                                              fontSize: 14.sp),
-                                                    ))
-                                              : const SizedBox())))),
-                              DataCell(SizedBox(
-                                  child: SizedBox(
-                                      child: Text(
-                                outstandingData.docNo,
-                                style: GoogleFonts.aBeeZee(fontSize: 14.sp),
-                              )))),
-                              DataCell(SizedBox(
-                                  child: Text(
-                                outstandingData.docDays.toString(),
-                                style: GoogleFonts.aBeeZee(fontSize: 14.sp),
-                                textAlign: TextAlign.right,
-                              ))),
-                              DataCell(SizedBox(
-                                  child: Text(
-                                outstandingData.invoiceAmount.toString(),
-                                style: GoogleFonts.aBeeZee(fontSize: 14.sp),
-                                textAlign: TextAlign.right,
-                              ))),
-                              DataCell(SizedBox(
-                                  child: Text(
-                                index == 1 &&
-                                        outstandingData.ledgerBillPayment == 0
-                                    ? receiptAmount.toStringAsFixed(2)
-                                    : "0.00",
-                                style: GoogleFonts.aBeeZee(fontSize: 14.sp),
-                                textAlign: TextAlign.right,
-                              ))),
-                              DataCell(SizedBox(
-                                  child: Text(
-                                outstandingData.balance.toString(),
-                                style: GoogleFonts.aBeeZee(fontSize: 14.sp),
-                                textAlign: TextAlign.right,
-                              ))),
-                            ]);
-                          }).toList(),
+                              ),
+                              SizedBox(
+                                height: 40,
+                                child: Center(
+                                    child: hasDataToDisplay
+                                        ? null
+                                        : Text(
+                                            "- Empty -",
+                                            style: GoogleFonts.aBeeZee(
+                                              fontSize: 14.sp,
+                                            ),
+                                          )),
+                              ),
+                            ],
+                          ),
+                        ),
+                        hasDataToDisplay
+                            ? Positioned(
+                                right: 10,
+                                bottom: 2,
+                                child: ElevatedButton(
+                                    onPressed: () {
+                                      if (_scrollController.position.pixels ==
+                                          _scrollController
+                                              .position.maxScrollExtent) {
+                                        // If already at the bottom, scroll to the top
+                                        _scrollController.animateTo(
+                                          _scrollController
+                                              .position.minScrollExtent,
+                                          duration: Duration(milliseconds: 500),
+                                          curve: Curves.easeInOut,
+                                        );
+                                      } else {
+                                        // If not at the bottom, scroll to the bottom
+                                        _scrollController.animateTo(
+                                          _scrollController
+                                              .position.maxScrollExtent,
+                                          duration:
+                                              const Duration(milliseconds: 500),
+                                          curve: Curves.easeInOut,
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.kPrimaryColor
+                                            .withOpacity(0.6),
+                                        shape: StadiumBorder()),
+                                    child: const Center(
+                                      child: Icon(Entypo.select_arrows),
+                                    )))
+                            : const SizedBox()
+                      ]),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 5,
+                  ),
+                  Column(children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: 5.sp, right: 5.sp),
+                      child: Container(
+                        color: AppColors.alternativeColor,
+                        child: Padding(
+                          padding: EdgeInsets.all(10.0.sp),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Total Invoice Amount :",
+                                style: TextStyle(
+                                    color: AppColors.kPrimaryColor,
+                                    fontFamily: fontFamily,
+                                    fontSize: 17.sp,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                              SizedBox(
+                                width: 5.sp,
+                              ),
+                              Text(
+                                totalInvoiceAmount.toStringAsFixed(2),
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 17.sp,
+                                    fontFamily: fontFamily),
+                              )
+                            ],
+                          ),
                         ),
                       ),
-                      SizedBox(
-                        height: 40,
-                        child: Center(
-                            child: hasDataToDisplay
-                                ? null
-                                : Text(
-                                    "- Empty -",
-                                    style: GoogleFonts.aBeeZee(
-                                      fontSize: 14.sp,
-                                    ),
-                                  )),
+                    ),
+                    SizedBox(
+                      height: 3.sp,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 5.sp, right: 5.sp),
+                      child: Container(
+                        color: AppColors.alternativeColor,
+                        child: Padding(
+                          padding: EdgeInsets.all(10.0.sp),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Total Balance :",
+                                style: TextStyle(
+                                    color: AppColors.kPrimaryColor,
+                                    fontFamily: fontFamily,
+                                    fontSize: 17.sp,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(
+                                width: 5,
+                              ),
+                              Text(
+                                totalBalance.toStringAsFixed(2),
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 17.sp,
+                                    fontFamily: fontFamily),
+                              )
+                            ],
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-                hasDataToDisplay
-                    ? Positioned(
-                        right: 10,
-                        bottom: 2,
-                        child: ElevatedButton(
-                            onPressed: () {
-                              if (_scrollController.position.pixels ==
-                                  _scrollController.position.maxScrollExtent) {
-                                // If already at the bottom, scroll to the top
-                                _scrollController.animateTo(
-                                  _scrollController.position.minScrollExtent,
-                                  duration: Duration(milliseconds: 500),
-                                  curve: Curves.easeInOut,
-                                );
-                              } else {
-                                // If not at the bottom, scroll to the bottom
-                                _scrollController.animateTo(
-                                  _scrollController.position.maxScrollExtent,
-                                  duration: const Duration(milliseconds: 500),
-                                  curve: Curves.easeInOut,
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    AppColors.kPrimaryColor.withOpacity(0.6),
-                                shape: StadiumBorder()),
-                            child: const Center(
-                              child: Icon(Entypo.select_arrows),
-                            )))
-                    : const SizedBox()
-              ]),
-            ),
-          ),
-          SizedBox(
-            height: 5,
-          ),
-          Column(children: [
-            Padding(
-              padding: EdgeInsets.only(left: 5.sp, right: 5.sp),
-              child: Container(
-                color: AppColors.alternativeColor,
-                child: Padding(
-                  padding: EdgeInsets.all(10.0.sp),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Total Invoice Amount :",
-                        style: TextStyle(
-                            color: AppColors.kPrimaryColor,
-                            fontFamily: fontFamily,
-                            fontSize: 17.sp,
-                            fontWeight: FontWeight.w500),
-                      ),
-                      SizedBox(
-                        width: 5.sp,
-                      ),
-                      Text(
-                        totalInvoiceAmount.toStringAsFixed(2),
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17.sp,
-                            fontFamily: fontFamily),
-                      )
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 3.sp,
-            ),
-            Padding(
-              padding: EdgeInsets.only(left: 5.sp, right: 5.sp),
-              child: Container(
-                color: AppColors.alternativeColor,
-                child: Padding(
-                  padding: EdgeInsets.all(10.0.sp),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Total Balance :",
-                        style: TextStyle(
-                            color: AppColors.kPrimaryColor,
-                            fontFamily: fontFamily,
-                            fontSize: 17.sp,
-                            fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(
-                        width: 5,
-                      ),
-                      Text(
-                        totalBalance.toStringAsFixed(2),
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17.sp,
-                            fontFamily: fontFamily),
-                      )
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ]),
-        ],
-      ),
-    );
+                    ),
+                  ]),
+                ],
+              )
+            : Center(
+                child: Text(
+                "Unauthorized User",
+                style: GoogleFonts.aboreto(
+                    fontSize: 20.sp, fontWeight: FontWeight.bold),
+              )));
   }
 
   filterWidget() {
@@ -1055,13 +1112,16 @@ class _SupplierOutstandingState extends State<SupplierOutstanding> {
                                             // resetSelections();
                                             _selectedSupplierModel = customer;
                                             myService.getproductDetails(
-                                                _selectedSupplierModel.ledgerId);
+                                                _selectedSupplierModel
+                                                    .ledgerId);
                                           });
 
                                           itemProviderCustomerLR.selectCustomer(
-                                            _selectedSupplierModel.ledgerId.toString(),
+                                            _selectedSupplierModel.ledgerId
+                                                .toString(),
                                             _selectedSupplierModel.ledgerName,
-                                            _selectedSupplierModel.ledgerAddress,
+                                            _selectedSupplierModel
+                                                .ledgerAddress,
                                             _selectedSupplierModel.ledgerPan,
                                           );
                                           // ignore: use_build_context_synchronously
@@ -1330,6 +1390,8 @@ class _SupplierOutstandingState extends State<SupplierOutstanding> {
 
   void _displayPdf() async {
     double totalReceiptAmount = 0.00;
+    double totalInvoiceAmount=0.00;
+
     String companyName = await getCompanyName();
     final doc = pw.Document();
 
@@ -1387,6 +1449,8 @@ class _SupplierOutstandingState extends State<SupplierOutstanding> {
                 ? receiptAmount
                 : 0.00;
             totalReceiptAmount += ab; // Accumulate the value here
+             totalInvoiceAmount = totalInvoiceAmount +
+                                details.invoiceAmount;
 
             ledgerRows.add(
               pw.Padding(

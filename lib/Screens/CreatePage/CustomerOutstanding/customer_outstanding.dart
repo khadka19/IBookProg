@@ -8,6 +8,7 @@ import 'package:petrolpump/API_Services/cusOutstanding_services.dart';
 import 'package:petrolpump/API_Services/get_services_order.dart';
 import 'package:petrolpump/API_Services/get_services_sales.dart';
 import 'package:petrolpump/API_Services/ledger_services.dart';
+import 'package:petrolpump/API_Services/role_control.dart';
 import 'package:petrolpump/CommonWidgets/colors.dart';
 import 'package:petrolpump/CommonWidgets/constants_text.dart';
 import 'package:petrolpump/CommonWidgets/custom_button.dart';
@@ -36,8 +37,8 @@ class CustomerOutstanding extends StatefulWidget {
 }
 
 class _CustomerOutstandingState extends State<CustomerOutstanding> {
-  var totalInvoiceAmount = 0.00;
-  var totalBalance = 0.00;
+  double totalInvoiceAmount = 0.00;
+  double totalBalance = 0.00;
   static const fontFamily = "times new roman";
   bool _shouldResetState = true;
   final TextEditingController _searchControllerCus = TextEditingController();
@@ -50,6 +51,8 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
   List<ProductCompanyModel> _productCompanyList = [];
   MyServiceOrder myServiceOrder = MyServiceOrder();
   LRFiscalDateService lrFiscalDateService = LRFiscalDateService();
+  RoleCheckServices roleControlServices = RoleCheckServices();
+
 
   String selectedValue = "AB"; // Default selected value
 
@@ -91,6 +94,8 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
   String currentBlcnString = '0.00';
   MyService myService = MyService();
   CusOutstandingServices cusOutstandingServices = CusOutstandingServices();
+  bool isAuthorized = true;
+
 
   String dropdownvalue = 'Bill Date';
   var items = [
@@ -98,6 +103,19 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
     'Dispatch Date',
     'Due Date',
   ];
+
+    void checkRole() async {
+    bool apiResult = await roleControlServices.roleCheckCustomerOutstanding();
+    if (apiResult == true) {
+      setState(() {
+        isAuthorized = true;
+      });
+    } else {
+      setState(() {
+        isAuthorized = false;
+      });
+    }
+  }
 
   Future<String> getCompanyName() async {
     // Retrieve the companyName from preferences or wherever it's stored
@@ -111,6 +129,7 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    checkRole();
     myService.getCustomerName().then((customerData) async {
       setState(() {
         _customerList = customerData; // Store the fetched customer data
@@ -159,6 +178,8 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
       customerOutstandingProvider.selectedAgeingOn = '';
       _shouldResetState = false;
     }
+  double totalInvoiceAmount = 0.00;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.kPrimaryColor,
@@ -188,7 +209,7 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
           )
         ],
       ),
-      body: Column(
+      body:isAuthorized? Column(
         children: [
           SizedBox(
             height: 10.sp,
@@ -544,7 +565,12 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
             ),
           ]),
         ],
-      ),
+      ):Center(
+                  child: Text(
+                  "Unauthorized User",
+                  style: GoogleFonts.aboreto(
+                      fontSize: 20.sp, fontWeight: FontWeight.bold),
+                ))
     );
   }
 
@@ -1329,9 +1355,9 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
 
   void _displayPdf() async {
     double totalReceiptAmount = 0.00;
+    double totalInvoiceAmount=0.00;
     String companyName = await getCompanyName();
     final doc = pw.Document();
-
     double font10sp = ScreenUtil().setSp(10.sp);
     double font8sp = ScreenUtil().setSp(8.sp);
     var screenWidth = MediaQuery.of(context).size.width;
@@ -1339,6 +1365,8 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
         Provider.of<CustomerOutstandingProvider>(context, listen: false);
     var date = DateFormat('yyyy-MM-dd')
         .format(customerOutstandingProvider.selectedAsOnDate!);
+
+
     double availableSpaceOnPage(pw.Context pdfContext) {
       return 600.0.sp;
     }
@@ -1386,6 +1414,8 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
                 ? receiptAmount
                 : 0.00;
             totalReceiptAmount += ab; // Accumulate the value here
+             totalInvoiceAmount = totalInvoiceAmount +
+                                details.invoiceAmount;
 
             ledgerRows.add(
               pw.Padding(
