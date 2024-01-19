@@ -14,7 +14,7 @@ class DataTableRow {
   });
 }
 class SelectedProductList {
-  late final int sn;
+ final int sn;
   final int id;
   final double? quantity;
   final String name;

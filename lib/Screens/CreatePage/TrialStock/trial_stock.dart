@@ -5,6 +5,7 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pdf/pdf.dart';
 import 'package:petrolpump/API_Services/get_services_order.dart';
+import 'package:petrolpump/API_Services/get_services_sales.dart';
 import 'package:petrolpump/API_Services/ledger_services.dart';
 import 'package:petrolpump/API_Services/role_control.dart';
 import 'package:petrolpump/API_Services/trial_stock_services.dart';
@@ -16,12 +17,16 @@ import 'package:petrolpump/Preference/preference.dart';
 import 'package:petrolpump/Provider/trial_stock_provider.dart';
 import 'package:petrolpump/Screens/CreatePage/main_page.dart';
 import 'package:petrolpump/Utilities/utilities.dart';
+import 'package:petrolpump/models/LedgerModel/fiscal_date_model.dart';
 import 'package:petrolpump/models/product_company_model.dart';
+import 'package:petrolpump/models/product_model.dart';
 import 'package:petrolpump/models/trailStock_brach_model.dart';
+import 'package:petrolpump/models/trialStock_productGroup_model.dart';
 import 'package:petrolpump/models/trial_stock_model.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:intl/intl.dart';
 
 class TrialStock extends StatefulWidget {
   final String title;
@@ -33,12 +38,18 @@ class TrialStock extends StatefulWidget {
 
 class _TrialStockState extends State<TrialStock> {
   bool _shouldResetState = true;
- bool hasPressed=false;
+  bool hasPressed = false;
   bool hasDataToDisplay = false;
   final ScrollController _scrollController = ScrollController();
   static const fontFamily = "times new roman";
   List<TrialStockModelDetails> _trialStockList = [];
+  List<LrFiscalDateModelDetails> _fiscalDateList = [];
+
   List<ProductCompanyModel> _productCompanyList = [];
+  List<TsProductGroupModelDetails> _productGroupList = [];
+  List<ProductModel> _productList = [];
+
+
   List<TrialStockBranchDetails> _trialStockBranchList = [];
   LRFiscalDateService lrFiscalDateService = LRFiscalDateService();
   MyServiceOrder myServiceOrder = MyServiceOrder();
@@ -47,14 +58,32 @@ class _TrialStockState extends State<TrialStock> {
   TrialStockServices trialStockService = TrialStockServices();
   List<String> balnceTypeItems = ['Positive', 'Negative', 'Zero', 'All'];
   double totalBalance = 0.0;
-  RoleCheckServices roleCheckServices=RoleCheckServices();
-  bool isAuthorized=false;
+  RoleCheckServices roleCheckServices = RoleCheckServices();
+  bool isAuthorized = false;
+  MyService myService=MyService();
 
   List<ProductCompanyModel> filterProductCompany(String searchProCom) {
     return _productCompanyList.where((productCompany) {
       return productCompany.companyName
           .toLowerCase()
           .contains(searchProCom.toLowerCase());
+    }).toList();
+  }
+
+   List<TsProductGroupModelDetails> filterProductGroup(String search) {
+    return _productGroupList.where((productGroup) {
+      return productGroup.name
+          .toLowerCase()
+          .contains(search.toLowerCase());
+    }).toList();
+  }
+
+  
+   List<ProductModel> filterProduct(String search) {
+    return _productList.where((data) {
+      return data.productName
+          .toLowerCase()
+          .contains(search.toLowerCase());
     }).toList();
   }
 
@@ -72,7 +101,7 @@ class _TrialStockState extends State<TrialStock> {
     return companyName;
   }
 
-    void checkRole() async {
+  void checkRole() async {
     bool apiResult = await roleCheckServices.roleCheckLedgerReport();
     if (apiResult == true) {
       setState(() {
@@ -91,7 +120,7 @@ class _TrialStockState extends State<TrialStock> {
     super.initState();
     checkRole();
     lrFiscalDateService.getFiscalDate().then((fiscalDate) async {
-// Store the fetched customer data
+      _fiscalDateList = fiscalDate;
     });
 
     trialStockService.getTrialStockBranch().then((branchList) async {
@@ -102,6 +131,19 @@ class _TrialStockState extends State<TrialStock> {
       setState(() {
         _productCompanyList =
             productCompanyData; // Store the fetched customer data
+      });
+    });
+     trialStockService.getProductGroup().then((data) async {
+      setState(() {
+        _productGroupList =
+            data; // Store the fetched customer data
+      });
+    });
+
+ myService.getproductDetails(0).then((data) async {
+      setState(() {
+        _productList =
+            data; // Store the fetched customer data
       });
     });
   }
@@ -117,9 +159,13 @@ class _TrialStockState extends State<TrialStock> {
       trialStockProvider.selectedBranch = '';
       trialStockProvider.selectedBranchId = 0;
       trialStockProvider.selectedBalanceType = 'Positive';
+      trialStockProvider.selectedProductGroup='';
+      trialStockProvider.selectedProductGroupId=0;
+      trialStockProvider.selectedProductName='';
+      trialStockProvider.selectedProductNameId=0;
       _shouldResetState = false;
     }
-  double totalBalance = 0.0;
+    double totalBalance = 0.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -132,9 +178,10 @@ class _TrialStockState extends State<TrialStock> {
             children: [
               IconButton(
                   onPressed: () {
-                  hasPressed?
-                      _displayPdf():
-                      Utilities.showSnackBar(context, "Select Field", false);
+                    hasPressed
+                        ? _displayPdf()
+                        : Utilities.showSnackBar(
+                            context, "Select Field", false);
                   },
                   icon: Icon(Icons.picture_as_pdf)),
               IconButton(
@@ -146,252 +193,278 @@ class _TrialStockState extends State<TrialStock> {
           )
         ],
       ),
-      body: isAuthorized? Column(
-        children: [
-          SizedBox(
-            height: 10.sp,
-          ),
-          hasDataToDisplay
-              ? Padding(
-                  padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
-                  child: Consumer<TrialStockProvider>(
-                    builder: (context, value, child) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                "Ledger Name : ",
-                                style: TextStyle(
-                                  fontSize: 15.sp,
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  value.selectedProductCompany,
-                                  style: TextStyle(
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                          SizedBox(
-                            height: 5.sp,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                )
-              : SizedBox(),
-          Card(
-            elevation: 5,
-            child: LimitedBox(
-              maxHeight: screenHeight * 0.608,
-              child: Stack(children: [
-                SingleChildScrollView(
-                  controller: _scrollController,
-                  scrollDirection: Axis.vertical,
-                  child: Column(
-                    children: [
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          border: TableBorder.all(
-                            width: 1,
-                            color: Colors.black12,
-                          ),
-                          headingRowColor: MaterialStateColor.resolveWith(
-                            (Set<MaterialState> states) {
-                              if (states.contains(MaterialState.hovered)) {
-                                // Color when the heading row is hovered
-                                return AppColors.kPrimaryColor.withOpacity(0.3);
-                              }
-                              return AppColors.kPrimaryColor; // Default color
-                            },
-                          ),
-                          dataRowHeight: 35.sp,
-                          headingRowHeight: 30.sp,
-                          dividerThickness: 1,
-                          columnSpacing: 10.sp,
-                          showCheckboxColumn: true,
-                          sortAscending: true,
-                          sortColumnIndex: 0,
-                          columns: [
-                            DataColumn(
-                                label: SizedBox(
-                                    child: Text(
-                              'S.N',
-                              style: GoogleFonts.acme(
-                                  color: Colors.white, fontSize: 15.sp),
-                            ))),
-                            DataColumn(
-                                label: SizedBox(
-                                    child: Text(
-                              'Product Name',
-                              style: GoogleFonts.acme(
-                                  color: Colors.white, fontSize: 15.sp),
-                            ))),
-                            DataColumn(
-                                label: SizedBox(
-                                    child: Text(
-                                  'In Qty',
-                                  style: GoogleFonts.acme(
-                                      color: Colors.white, fontSize: 15.sp),
-                                )),
-                                numeric: true),
-                            DataColumn(
-                                label: SizedBox(
-                                    child: Text(
-                                  'Out Qty',
-                                  style: GoogleFonts.acme(
-                                      color: Colors.white, fontSize: 15.sp),
-                                )),
-                                numeric: true),
-                            DataColumn(
-                                label: SizedBox(
-                                    child: Text(
-                                  'Balance',
-                                  style: GoogleFonts.acme(
-                                      color: Colors.white, fontSize: 15.sp),
-                                )),
-                                numeric: true),
-                          ],
-                          rows: _trialStockList.map((data) {
-                            int index = _trialStockList.indexOf(data) + 1;
-                            // var a = outstandingData.invoiceAmount;
-                            // var b = outstandingData.balance;
-                            // var receiptAmount = (a - b);
-                            // totalInvoiceAmount = totalInvoiceAmount +
-                            //     outstandingData.invoiceAmount;
-                            // totalBalance = outstandingData.balance;
-                            totalBalance += data.balance;
-                            return DataRow(cells: [
-                              DataCell(SizedBox(
-                                child: Text(
-                                  index.toString(),
-                                  style: GoogleFonts.aBeeZee(fontSize: 14.sp),
-                                ),
-                              )),
-                              DataCell(SizedBox(
-                                  child: SizedBox(
-                                      child: Text(
-                                data.productName,
-                                style: GoogleFonts.aBeeZee(fontSize: 14.sp),
-                              )))),
-                              DataCell(SizedBox(
-                                  child: Text(
-                                data.inQuantity.toString(),
-                                style: GoogleFonts.aBeeZee(fontSize: 14.sp),
-                                textAlign: TextAlign.right,
-                              ))),
-                              DataCell(SizedBox(
-                                  child: Text(
-                                data.outQuantity.toString(),
-                                style: GoogleFonts.aBeeZee(fontSize: 14.sp),
-                                textAlign: TextAlign.right,
-                              ))),
-                              DataCell(SizedBox(
-                                  child: Text(
-                                data.balance.toString(),
-                                style: GoogleFonts.aBeeZee(fontSize: 14.sp),
-                                textAlign: TextAlign.right,
-                              ))),
-                            ]);
-                          }).toList(),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 40,
-                        child: Center(
-                            child: hasDataToDisplay
-                                ? null
-                                : Text(
-                                    "- Empty -",
-                                    style: GoogleFonts.aBeeZee(
-                                      fontSize: 14.sp,
-                                    ),
-                                  )),
-                      ),
-                    ],
-                  ),
+      body: isAuthorized
+          ? Column(
+              children: [
+                SizedBox(
+                  height: 10.sp,
                 ),
                 hasDataToDisplay
-                    ? Positioned(
-                        right: 10,
-                        bottom: 2,
-                        child: ElevatedButton(
-                            onPressed: () {
-                              if (_scrollController.position.pixels ==
-                                  _scrollController.position.maxScrollExtent) {
-                                // If already at the bottom, scroll to the top
-                                _scrollController.animateTo(
-                                  _scrollController.position.minScrollExtent,
-                                  duration: Duration(milliseconds: 500),
-                                  curve: Curves.easeInOut,
-                                );
-                              } else {
-                                // If not at the bottom, scroll to the bottom
-                                _scrollController.animateTo(
-                                  _scrollController.position.maxScrollExtent,
-                                  duration: const Duration(milliseconds: 500),
-                                  curve: Curves.easeInOut,
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    AppColors.kPrimaryColor.withOpacity(0.6),
-                                shape: StadiumBorder()),
-                            child: const Center(
-                              child: Icon(Entypo.select_arrows),
-                            )))
-                    : const SizedBox()
-              ]),
-            ),
-          ),
-          SizedBox(
-            height: 5,
-          ),
-          Column(children: [
-            Padding(
-              padding: EdgeInsets.only(left: 5.sp, right: 5.sp),
-              child: Container(
-                color: AppColors.alternativeColor,
-                child: Padding(
-                  padding: EdgeInsets.all(10.0.sp),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Total Balance :",
-                        style: TextStyle(
-                            color: AppColors.kPrimaryColor,
-                            fontFamily: fontFamily,
-                            fontSize: 17.sp,
-                            fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(
-                        width: 5,
-                      ),
-                      Text(
-                        totalBalance.toStringAsFixed(2),
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17.sp,
-                            fontFamily: fontFamily),
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
+                        child: Consumer<TrialStockProvider>(
+                          builder: (context, value, child) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      "Ledger Name : ",
+                                      style: TextStyle(
+                                        fontSize: 15.sp,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        value.selectedProductCompany,
+                                        style: TextStyle(
+                                          fontSize: 15.sp,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                SizedBox(
+                                  height: 5.sp,
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                       )
-                    ],
+                    : SizedBox(),
+                Card(
+                  elevation: 5,
+                  child: LimitedBox(
+                    maxHeight: screenHeight * 0.608,
+                    child: Stack(children: [
+                      SingleChildScrollView(
+                        controller: _scrollController,
+                        scrollDirection: Axis.vertical,
+                        child: Column(
+                          children: [
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: DataTable(
+                                border: TableBorder.all(
+                                  width: 1,
+                                  color: Colors.black12,
+                                ),
+                                headingRowColor: MaterialStateColor.resolveWith(
+                                  (Set<MaterialState> states) {
+                                    if (states
+                                        .contains(MaterialState.hovered)) {
+                                      // Color when the heading row is hovered
+                                      return AppColors.kPrimaryColor
+                                          .withOpacity(0.3);
+                                    }
+                                    return AppColors
+                                        .kPrimaryColor; // Default color
+                                  },
+                                ),
+                                dataRowHeight: 35.sp,
+                                headingRowHeight: 30.sp,
+                                dividerThickness: 1,
+                                columnSpacing: 10.sp,
+                                showCheckboxColumn: true,
+                                sortAscending: true,
+                                sortColumnIndex: 0,
+                                columns: [
+                                  DataColumn(
+                                      label: SizedBox(
+                                          child: Text(
+                                    'S.N',
+                                    style: GoogleFonts.acme(
+                                        color: Colors.white, fontSize: 15.sp),
+                                  ))),
+                                  DataColumn(
+                                      label: SizedBox(
+                                          child: Text(
+                                    'Product Name',
+                                    style: GoogleFonts.acme(
+                                        color: Colors.white, fontSize: 15.sp),
+                                  ))),
+                                  DataColumn(
+                                      label: SizedBox(
+                                          child: Text(
+                                    'Opening Qunatity',
+                                    style: GoogleFonts.acme(
+                                        color: Colors.white, fontSize: 15.sp),
+                                  ))),
+                                  DataColumn(
+                                      label: SizedBox(
+                                          child: Text(
+                                        'In Qty',
+                                        style: GoogleFonts.acme(
+                                            color: Colors.white,
+                                            fontSize: 15.sp),
+                                      )),
+                                      numeric: true),
+                                  DataColumn(
+                                      label: SizedBox(
+                                          child: Text(
+                                        'Out Qty',
+                                        style: GoogleFonts.acme(
+                                            color: Colors.white,
+                                            fontSize: 15.sp),
+                                      )),
+                                      numeric: true),
+                                  DataColumn(
+                                      label: SizedBox(
+                                          child: Text(
+                                        'Balance',
+                                        style: GoogleFonts.acme(
+                                            color: Colors.white,
+                                            fontSize: 15.sp),
+                                      )),
+                                      numeric: true),
+                                ],
+                                rows: _trialStockList.map((data) {
+                                  int index = _trialStockList.indexOf(data) + 1;
+                                
+                                  totalBalance += data.balance;
+                                  return DataRow(cells: [
+                                    DataCell(SizedBox(
+                                      child: Text(
+                                        index.toString(),
+                                        style: GoogleFonts.aBeeZee(
+                                            fontSize: 14.sp),
+                                      ),
+                                    )),
+                                    DataCell(SizedBox(
+                                        child: SizedBox(
+                                            child: Text(
+                                      data.productName,
+                                      style:
+                                          GoogleFonts.aBeeZee(fontSize: 14.sp),
+                                    )))),
+                                    DataCell(SizedBox(
+                                        child: SizedBox(
+                                            child: Text(
+                                      data.openingQuantity.toString(),
+                                      style:
+                                          GoogleFonts.aBeeZee(fontSize: 14.sp),
+                                    )))),
+                                    DataCell(SizedBox(
+                                        child: Text(
+                                      data.inQuantity.toString(),
+                                      style:
+                                          GoogleFonts.aBeeZee(fontSize: 14.sp),
+                                      textAlign: TextAlign.right,
+                                    ))),
+                                    DataCell(SizedBox(
+                                        child: Text(
+                                      data.outQuantity.toString(),
+                                      style:
+                                          GoogleFonts.aBeeZee(fontSize: 14.sp),
+                                      textAlign: TextAlign.right,
+                                    ))),
+                                    DataCell(SizedBox(
+                                        child: Text(
+                                      data.balance.toString(),
+                                      style:
+                                          GoogleFonts.aBeeZee(fontSize: 14.sp),
+                                      textAlign: TextAlign.right,
+                                    ))),
+                                  ]);
+                                }).toList(),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 40,
+                              child: Center(
+                                  child: hasDataToDisplay
+                                      ? null
+                                      : Text(
+                                          "- Empty -",
+                                          style: GoogleFonts.aBeeZee(
+                                            fontSize: 14.sp,
+                                          ),
+                                        )),
+                            ),
+                          ],
+                        ),
+                      ),
+                      hasDataToDisplay
+                          ? Positioned(
+                              right: 10,
+                              bottom: 2,
+                              child: ElevatedButton(
+                                  onPressed: () {
+                                    if (_scrollController.position.pixels ==
+                                        _scrollController
+                                            .position.maxScrollExtent) {
+                                      // If already at the bottom, scroll to the top
+                                      _scrollController.animateTo(
+                                        _scrollController
+                                            .position.minScrollExtent,
+                                        duration: Duration(milliseconds: 500),
+                                        curve: Curves.easeInOut,
+                                      );
+                                    } else {
+                                      // If not at the bottom, scroll to the bottom
+                                      _scrollController.animateTo(
+                                        _scrollController
+                                            .position.maxScrollExtent,
+                                        duration:
+                                            const Duration(milliseconds: 500),
+                                        curve: Curves.easeInOut,
+                                      );
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.kPrimaryColor
+                                          .withOpacity(0.6),
+                                      shape: StadiumBorder()),
+                                  child: const Center(
+                                    child: Icon(Entypo.select_arrows),
+                                  )))
+                          : const SizedBox()
+                    ]),
                   ),
                 ),
-              ),
-            ),
-          ]),
-        ],
-      ):Center(
+                SizedBox(
+                  height: 5,
+                ),
+                Column(children: [
+                  Padding(
+                    padding: EdgeInsets.only(left: 5.sp, right: 5.sp),
+                    child: Container(
+                      color: AppColors.alternativeColor,
+                      child: Padding(
+                        padding: EdgeInsets.all(10.0.sp),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Total Balance :",
+                              style: TextStyle(
+                                  color: AppColors.kPrimaryColor,
+                                  fontFamily: fontFamily,
+                                  fontSize: 17.sp,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(
+                              width: 5,
+                            ),
+                            Text(
+                              totalBalance.toStringAsFixed(2),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17.sp,
+                                  fontFamily: fontFamily),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ]),
+              ],
+            )
+          : Center(
               child: Text(
               "Unauthorized User",
               style: GoogleFonts.aboreto(
@@ -413,8 +486,10 @@ class _TrialStockState extends State<TrialStock> {
             builder: (context, value, child) {
               var selectedBranch = value.selectedBranch;
               var name = value.selectedProductCompany;
+              var productGroupName=value.selectedProductGroup;
+              var productName=value.selectedProductName;
               return FractionallySizedBox(
-                heightFactor: 0.47,
+                heightFactor: 0.8,
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
@@ -430,7 +505,192 @@ class _TrialStockState extends State<TrialStock> {
                         thickness: 1.sp,
                       ),
                       Padding(
-                        padding: EdgeInsets.all(10.0.sp),
+                        padding: EdgeInsets.fromLTRB(10, 10, 10, 0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.all(10.0.sp),
+                              child: Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "Date From",
+                                    style: GoogleFonts.aBeeZee(
+                                        color: Colors.black54, fontSize: 16.sp),
+                                  ),
+                                  SizedBox(
+                                    height: 10.sp,
+                                  ),
+                                  Consumer<TrialStockProvider>(
+                                    builder: (context, value, child) {
+                                      return InkWell(
+                                        onTap: () async {
+                                          DateTime? pickedDateFrom =
+                                              await showDatePicker(
+                                                  context: context,
+                                                  initialDate: DateTime.now(),
+                                                  firstDate: DateTime(1950),
+                                                  //DateTime.now() - not to allow to choose before today.
+                                                  lastDate: DateTime(2100));
+
+                                          if (pickedDateFrom != null) {
+                                            setState(() {
+                                              value.selectedDateFrom =
+                                                  pickedDateFrom;
+                                            });
+                                          } else {}
+                                        },
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                              color:
+                                                  AppColors.alternativeColor),
+                                          child: Padding(
+                                            padding: EdgeInsets.all(8.0.sp),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      FontAwesome.calendar,
+                                                      size: 15.sp,
+                                                    ),
+                                                    SizedBox(
+                                                      width: 10.sp,
+                                                    ),
+                                                    Text(
+                                                      value.selectedDateFrom !=
+                                                              null
+                                                          ? DateFormat(
+                                                                  'yyyy-MM-dd')
+                                                              .format(value
+                                                                  .selectedDateFrom!)
+                                                          : DateFormat(
+                                                                  'yyyy-MM-dd')
+                                                              .format(_fiscalDateList[
+                                                                      0]
+                                                                  .finStartDate),
+                                                      style: TextStyle(
+                                                          fontSize: 16.sp),
+                                                    )
+                                                  ],
+                                                ),
+                                                const Icon(
+                                                  Icons.arrow_drop_down,
+                                                  color: Colors.black,
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  Divider(
+                                    thickness: 0.5.sp,
+                                  )
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.all(10.0.sp),
+                              child: Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "Date To",
+                                    style: GoogleFonts.aBeeZee(
+                                        color: Colors.black54, fontSize: 16.sp),
+                                  ),
+                                  SizedBox(
+                                    height: 10.sp,
+                                  ),
+                                  Consumer<TrialStockProvider>(
+                                    builder: (context, value, child) {
+                                      return InkWell(
+                                        onTap: () async {
+                                          DateTime? pickedDateTo =
+                                              await showDatePicker(
+                                                  context: context,
+                                                  initialDate: DateTime.now(),
+                                                  firstDate: DateTime(1950),
+                                                  //DateTime.now() - not to allow to choose before today.
+                                                  lastDate: DateTime(2100));
+
+                                          if (pickedDateTo != null) {
+                                            setState(() {
+                                              value.selectedDateTo =
+                                                  pickedDateTo;
+                                            });
+                                          } else {}
+                                        },
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                              color:
+                                                  AppColors.alternativeColor),
+                                          child: Padding(
+                                            padding: EdgeInsets.all(8.0.sp),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      FontAwesome.calendar,
+                                                      size: 15.sp,
+                                                    ),
+                                                    SizedBox(
+                                                      width: 10.sp,
+                                                    ),
+                                                    Text(
+                                                      value.selectedDateTo !=
+                                                              null
+                                                          ? DateFormat(
+                                                                  'yyyy-MM-dd')
+                                                              .format(value
+                                                                  .selectedDateTo!)
+                                                          : DateFormat(
+                                                                  'yyyy-MM-dd')
+                                                              .format(
+                                                                  _fiscalDateList[
+                                                                          0]
+                                                                      .finEndDate),
+                                                      style: TextStyle(
+                                                          fontSize: 16.sp),
+                                                    )
+                                                  ],
+                                                ),
+                                                const Icon(
+                                                  Icons.arrow_drop_down,
+                                                  color: Colors.black,
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  Divider(
+                                    thickness: 0.5.sp,
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(10, 0, 10, 10),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -453,33 +713,29 @@ class _TrialStockState extends State<TrialStock> {
                                     onTap: () {
                                       branchName();
                                     },
-                                    child: Padding(
-                                      padding:
-                                          EdgeInsets.fromLTRB(10, 0, 10, 0),
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        color: AppColors.alternativeColor,
-                                        child: Padding(
-                                          padding: EdgeInsets.all(10.0.sp),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              SizedBox(
-                                                child: Text(
-                                                  selectedBranch.isNotEmpty
-                                                      ? selectedBranch
-                                                      : "Select Branch",
-                                                  style: GoogleFonts.adamina(
-                                                      color: Colors.black,
-                                                      fontSize: 16.sp),
-                                                ),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      color: AppColors.alternativeColor,
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.0.sp),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            SizedBox(
+                                              child: Text(
+                                                selectedBranch.isNotEmpty
+                                                    ? selectedBranch
+                                                    : "Select Branch",
+                                                style: GoogleFonts.adamina(
+                                                    color: Colors.black,
+                                                    fontSize: 16.sp),
                                               ),
-                                              const Icon(
-                                                Icons.arrow_drop_down,
-                                              )
-                                            ],
-                                          ),
+                                            ),
+                                            const Icon(
+                                              Icons.arrow_drop_down,
+                                            )
+                                          ],
                                         ),
                                       ),
                                     ),
@@ -493,12 +749,12 @@ class _TrialStockState extends State<TrialStock> {
                             Padding(
                               padding: EdgeInsets.all(10.0.sp),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
-                                    "Balance Type",
+                                    "Blnc Type",
                                     style: GoogleFonts.aBeeZee(
                                         color: Colors.black54, fontSize: 16.sp),
                                   ),
@@ -509,35 +765,30 @@ class _TrialStockState extends State<TrialStock> {
                                     onTap: () {
                                       balanceType();
                                     },
-                                    child: Padding(
-                                      padding:
-                                          EdgeInsets.fromLTRB(10, 0, 10, 0),
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        color: AppColors.alternativeColor,
-                                        child: Padding(
-                                          padding: EdgeInsets.all(10.0.sp),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              SizedBox(
-                                                child: Text(
-                                                  value.selectedBalanceType
-                                                          .isNotEmpty
-                                                      ? value
-                                                          .selectedBalanceType
-                                                      : balnceTypeItems[0],
-                                                  style: GoogleFonts.adamina(
-                                                      color: Colors.black,
-                                                      fontSize: 16.sp),
-                                                ),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      color: AppColors.alternativeColor,
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.0.sp),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            SizedBox(
+                                              child: Text(
+                                                value.selectedBalanceType
+                                                        .isNotEmpty
+                                                    ? value.selectedBalanceType
+                                                    : balnceTypeItems[0],
+                                                style: GoogleFonts.adamina(
+                                                    color: Colors.black,
+                                                    fontSize: 16.sp),
                                               ),
-                                              const Icon(
-                                                Icons.arrow_drop_down,
-                                              )
-                                            ],
-                                          ),
+                                            ),
+                                            const Icon(
+                                              Icons.arrow_drop_down,
+                                            )
+                                          ],
                                         ),
                                       ),
                                     ),
@@ -557,7 +808,7 @@ class _TrialStockState extends State<TrialStock> {
                           Padding(
                             padding: const EdgeInsets.only(left: 30),
                             child: Text(
-                              "Company",
+                              "Product Company",
                               style: GoogleFonts.aBeeZee(
                                   color: Colors.black54, fontSize: 16.sp),
                             ),
@@ -588,7 +839,7 @@ class _TrialStockState extends State<TrialStock> {
                                         child: Text(
                                           name.isNotEmpty
                                               ? name
-                                              : "Select a Company",
+                                              : "Select a Product Company",
                                           style: GoogleFonts.adamina(
                                               color: Colors.black,
                                               fontSize: 16.sp),
@@ -608,24 +859,147 @@ class _TrialStockState extends State<TrialStock> {
                       const SizedBox(
                         height: 10,
                       ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 30),
+                            child: Text(
+                              "Product Group",
+                              style: GoogleFonts.aBeeZee(
+                                  color: Colors.black54, fontSize: 16.sp),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          InkWell(
+                            onTap: () {
+                              productGroup();
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                              child: Container(
+                                alignment: Alignment.center,
+                                width: double.infinity,
+                                color: AppColors.alternativeColor,
+                                child: Padding(
+                                  padding: EdgeInsets.all(10.0.sp),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.7,
+                                        child: Text(
+                                          productGroupName.isNotEmpty
+                                              ? productGroupName
+                                              : "Select a Product Group",
+                                          style: GoogleFonts.adamina(
+                                              color: Colors.black,
+                                              fontSize: 16.sp),
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.arrow_drop_down,
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+
+                      SizedBox(
+                        height: 15,
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 30),
+                            child: Text(
+                              "Product",
+                              style: GoogleFonts.aBeeZee(
+                                  color: Colors.black54, fontSize: 16.sp),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          InkWell(
+                            onTap: () {
+                              productDetails();
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                              child: Container(
+                                alignment: Alignment.center,
+                                width: double.infinity,
+                                color: AppColors.alternativeColor,
+                                child: Padding(
+                                  padding: EdgeInsets.all(10.0.sp),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.7,
+                                        child: Text(
+                                          productName.isNotEmpty
+                                              ? productName
+                                              : "Select a Product",
+                                          style: GoogleFonts.adamina(
+                                              color: Colors.black,
+                                              fontSize: 16.sp),
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.arrow_drop_down,
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       Padding(
                         padding: EdgeInsets.all(10.0.sp),
                         child: Consumer<TrialStockProvider>(
                           builder: (context, value, child) {
                             return CustomButtom(
                                 onPressed: () async {
-                                  // if (_selectedSupplierModel.ledgerId == 0) {
-                                  //   // Ledger Name not selected
-                                  //   Utilities.showToastMessage(
-                                  //       "Select MR", AppColors.warningColor);
-                                  //   return;
-                                  // }
-                                  hasPressed=true;
+                                 
+                                  hasPressed = true;
                                   String balanceType =
                                       value.selectedBalanceType.toString();
                                   int selectedBranchId = value.selectedBranchId;
                                   int selectedProductCompanyId =
                                       value.selectedProductCompanyId;
+                                  int selectedProductGroupId=value.selectedProductGroupId;
+                                  int selectedProductId=value.selectedProductNameId;
+                                  String formattedFromDate =
+                                      value.selectedDateFrom != null
+                                          ? DateFormat('yyyy-MM-dd')
+                                              .format(value.selectedDateFrom!)
+                                          : DateFormat('yyyy-MM-dd').format(
+                                              _fiscalDateList[0].finStartDate);
+
+                                  String formattedToDate =
+                                      value.selectedDateTo != null
+                                          ? DateFormat('yyyy-MM-dd')
+                                              .format(value.selectedDateTo!)
+                                          : DateFormat('yyyy-MM-dd').format(
+                                              _fiscalDateList[0].finEndDate);
 
                                   showDialog(
                                       context: context,
@@ -638,9 +1012,13 @@ class _TrialStockState extends State<TrialStock> {
                                   try {
                                     trialStockService
                                         .getTrialStockList(
+                                     formattedFromDate,
+                                      formattedToDate,
                                       balanceType,
                                       selectedBranchId,
                                       selectedProductCompanyId,
+                                      selectedProductGroupId,
+                                      selectedProductId,
                                     )
                                         .then((data) async {
                                       setState(() {
@@ -670,7 +1048,8 @@ class _TrialStockState extends State<TrialStock> {
         });
   }
 
-  productCompany() {
+
+   productCompany() {
     showModalBottomSheet(
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.only(
@@ -724,6 +1103,162 @@ class _TrialStockState extends State<TrialStock> {
                                               children: [
                                                 Text(
                                                   productCompany.companyName,
+                                                  style: GoogleFonts.adamina(
+                                                    fontSize: 17.sp,
+                                                  ),
+                                                ),
+                                                Divider(
+                                                  thickness: 1.sp,
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  });
+                            },
+                          ),
+                  )
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  productGroup() {
+    showModalBottomSheet(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20.sp),
+                topRight: Radius.circular(20.sp))),
+        context: context,
+        builder: (BuildContext context) {
+          return SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(10.sp, 10.sp, 10.sp, 0),
+              child: Column(
+                children: [
+                  CustomSearchBar(
+                    controller: _searchControllerCus,
+                    onChanged: (String? value) {
+                      searchCusListner.value = value ?? "";
+                    },
+                    hintText: 'Select Company',
+                  ),
+                  Expanded(
+                    child: _productGroupList.isEmpty
+                        ? const Center(child: CircularProgressIndicator())
+                        : ValueListenableBuilder(
+                            valueListenable: searchCusListner,
+                            builder: (context, value, child) {
+                              return ListView.builder(
+                                  itemCount: filterProductGroup(value).length,
+                                  itemBuilder:
+                                      (BuildContext context, int index) {
+                                    TsProductGroupModelDetails data =
+                                        filterProductGroup(value)[index];
+                                    return Consumer<TrialStockProvider>(
+                                      builder: (context, value, child) {
+                                        return Padding(
+                                          padding: EdgeInsets.fromLTRB(
+                                              10.sp, 7.sp, 10.sp, 7.sp),
+                                          child: InkWell(
+                                            onTap: () async {
+                                              // resetSelections();
+                                              value.selectedProductGroup =
+                                                  data.name;
+                                              value.selectedProductGroupId =
+                                                  data.id!;
+                                              // ignore: use_build_context_synchronously
+                                              Navigator.pop(context);
+                                            },
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  data.name,
+                                                  style: GoogleFonts.adamina(
+                                                    fontSize: 17.sp,
+                                                  ),
+                                                ),
+                                                Divider(
+                                                  thickness: 1.sp,
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  });
+                            },
+                          ),
+                  )
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  productDetails() {
+    showModalBottomSheet(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20.sp),
+                topRight: Radius.circular(20.sp))),
+        context: context,
+        builder: (BuildContext context) {
+          return SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(10.sp, 10.sp, 10.sp, 0),
+              child: Column(
+                children: [
+                  CustomSearchBar(
+                    controller: _searchControllerCus,
+                    onChanged: (String? value) {
+                      searchCusListner.value = value ?? "";
+                    },
+                    hintText: 'Select Company',
+                  ),
+                  Expanded(
+                    child: _productList.isEmpty
+                        ? const Center(child: CircularProgressIndicator())
+                        : ValueListenableBuilder(
+                            valueListenable: searchCusListner,
+                            builder: (context, value, child) {
+                              return ListView.builder(
+                                  itemCount: filterProduct(value).length,
+                                  itemBuilder:
+                                      (BuildContext context, int index) {
+                                    ProductModel data =
+                                        filterProduct(value)[index];
+                                    return Consumer<TrialStockProvider>(
+                                      builder: (context, value, child) {
+                                        return Padding(
+                                          padding: EdgeInsets.fromLTRB(
+                                              10.sp, 7.sp, 10.sp, 7.sp),
+                                          child: InkWell(
+                                            onTap: () async {
+                                              // resetSelections();
+                                              value.selectedProductName =
+                                                  data.productName;
+                                              value.selectedProductNameId =
+                                                  data.id!;
+                                              // ignore: use_build_context_synchronously
+                                              Navigator.pop(context);
+                                            },
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  data.productName,
                                                   style: GoogleFonts.adamina(
                                                     fontSize: 17.sp,
                                                   ),
@@ -895,8 +1430,8 @@ class _TrialStockState extends State<TrialStock> {
     double font8sp = ScreenUtil().setSp(8.sp);
     var screenWidth = MediaQuery.of(context).size.width;
     final trialStockProvider =
-    Provider.of<TrialStockProvider>(context, listen: false);
-   double totalBalance = 0.0;
+        Provider.of<TrialStockProvider>(context, listen: false);
+    double totalBalance = 0.0;
 
     double availableSpaceOnPage(pw.Context pdfContext) {
       return 600.0.sp;

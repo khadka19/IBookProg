@@ -35,6 +35,7 @@ class TrialStockModelDetails{
   double inQuantity;
   double outQuantity;
   double balance;
+  double openingQuantity;
 
   TrialStockModelDetails({
     required this.productId,
@@ -44,6 +45,7 @@ class TrialStockModelDetails{
     required this.inQuantity,
     required this.outQuantity,
     required this.balance,
+    required this.openingQuantity,
   });
 
     factory TrialStockModelDetails.fromJson(Map<String, dynamic> json) => TrialStockModelDetails(
@@ -52,6 +54,7 @@ class TrialStockModelDetails{
         productAlias: json["productAlias"],
         productUnit: json["productUnit"],
         inQuantity: json["inQuantity"],
+        openingQuantity: json["openingQuantity"],
         outQuantity: json["outQuantity"],
         balance: json["balance"],
 
@@ -65,6 +68,7 @@ class TrialStockModelDetails{
         "inQuantity":inQuantity,
         "outQuantity":outQuantity,
         "balance":balance,
+        "openingQuantity":openingQuantity
 
     };
 }

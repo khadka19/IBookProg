@@ -651,6 +651,7 @@ class _LedgerReportState extends State<LedgerReport> {
                    Divider(
                     thickness: 1.sp,
                   ),
+                  
                   Padding(
                     padding:  EdgeInsets.all(10.0.sp),
                     child: Row(
