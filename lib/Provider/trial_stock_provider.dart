@@ -94,4 +94,5 @@ class TrialStockProvider extends ChangeNotifier{
     selectedDateFrom=null;
     selectedDateTo=null;
   }
+
 }

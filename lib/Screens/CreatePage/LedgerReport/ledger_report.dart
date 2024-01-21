@@ -199,6 +199,7 @@ class _LedgerReportState extends State<LedgerReport> {
                             const SizedBox(
                               height: 5,
                             ),
+                            
                             Consumer<LedgerDateProvider>(
                                 builder: (context, value, child) {
                               String dateString =
@@ -865,7 +866,6 @@ class _LedgerReportState extends State<LedgerReport> {
                     height: 20,
                   ),
             
-                
                   Padding(
                     padding:  EdgeInsets.all(10.0.sp),
                     child: Consumer<LedgerDateProvider>(

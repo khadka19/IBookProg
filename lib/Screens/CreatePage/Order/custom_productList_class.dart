@@ -107,13 +107,10 @@ class _SelectedContentProductListOState
                             itemBuilder: (context, index) {
                               final DataRow dataRow = dataRows[index];
                               final cells = dataRow.cells.toList();
-
                               return Column(
                                 children: [
                                   Dismissible(
-                                    key: Key(cells[0]
-                                        .child
-                                        .toString()), // Use a unique key for each item
+                                    key: Key("${itemProvider.productList[index].sn}_$index"),
                                     direction: DismissDirection.endToStart,
                                     background: Container(
                                       color: Colors.red,
@@ -209,13 +206,8 @@ class _SelectedContentProductListOState
                                       ],
                                     ),
                                   ),
-                                   Divider(
-                                    indent: 10.sp,
-                                    endIndent: 10.sp,
-                                    thickness: 0.2.sp,
-                                    color: Colors.black,
-                                    height: 0, // You can customize the color
-                                  ),
+                               
+                               Divider(thickness: 1, color: Color.fromRGBO(238, 238, 238, 1),)
                                 ],
                               );
                             }),

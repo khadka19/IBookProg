@@ -49,7 +49,6 @@ class _TrialStockState extends State<TrialStock> {
   List<TsProductGroupModelDetails> _productGroupList = [];
   List<ProductModel> _productList = [];
 
-
   List<TrialStockBranchDetails> _trialStockBranchList = [];
   LRFiscalDateService lrFiscalDateService = LRFiscalDateService();
   MyServiceOrder myServiceOrder = MyServiceOrder();
@@ -60,7 +59,7 @@ class _TrialStockState extends State<TrialStock> {
   double totalBalance = 0.0;
   RoleCheckServices roleCheckServices = RoleCheckServices();
   bool isAuthorized = false;
-  MyService myService=MyService();
+  MyService myService = MyService();
 
   List<ProductCompanyModel> filterProductCompany(String searchProCom) {
     return _productCompanyList.where((productCompany) {
@@ -70,20 +69,15 @@ class _TrialStockState extends State<TrialStock> {
     }).toList();
   }
 
-   List<TsProductGroupModelDetails> filterProductGroup(String search) {
+  List<TsProductGroupModelDetails> filterProductGroup(String search) {
     return _productGroupList.where((productGroup) {
-      return productGroup.name
-          .toLowerCase()
-          .contains(search.toLowerCase());
+      return productGroup.name.toLowerCase().contains(search.toLowerCase());
     }).toList();
   }
 
-  
-   List<ProductModel> filterProduct(String search) {
+  List<ProductModel> filterProduct(String search) {
     return _productList.where((data) {
-      return data.productName
-          .toLowerCase()
-          .contains(search.toLowerCase());
+      return data.productName.toLowerCase().contains(search.toLowerCase());
     }).toList();
   }
 
@@ -133,17 +127,15 @@ class _TrialStockState extends State<TrialStock> {
             productCompanyData; // Store the fetched customer data
       });
     });
-     trialStockService.getProductGroup().then((data) async {
+    trialStockService.getProductGroup().then((data) async {
       setState(() {
-        _productGroupList =
-            data; // Store the fetched customer data
+        _productGroupList = data; // Store the fetched customer data
       });
     });
 
- myService.getproductDetails(0).then((data) async {
+    myService.getproductDetails(0).then((data) async {
       setState(() {
-        _productList =
-            data; // Store the fetched customer data
+        _productList = data; // Store the fetched customer data
       });
     });
   }
@@ -159,11 +151,13 @@ class _TrialStockState extends State<TrialStock> {
       trialStockProvider.selectedBranch = '';
       trialStockProvider.selectedBranchId = 0;
       trialStockProvider.selectedBalanceType = 'Positive';
-      trialStockProvider.selectedProductGroup='';
-      trialStockProvider.selectedProductGroupId=0;
-      trialStockProvider.selectedProductName='';
-      trialStockProvider.selectedProductNameId=0;
+      trialStockProvider.selectedProductGroup = '';
+      trialStockProvider.selectedProductGroupId = 0;
+      trialStockProvider.selectedProductName = '';
+      trialStockProvider.selectedProductNameId = 0;
       _shouldResetState = false;
+      trialStockProvider.selectedDateFrom = null;
+      trialStockProvider.selectedDateTo = null;
     }
     double totalBalance = 0.0;
 
@@ -199,42 +193,7 @@ class _TrialStockState extends State<TrialStock> {
                 SizedBox(
                   height: 10.sp,
                 ),
-                hasDataToDisplay
-                    ? Padding(
-                        padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
-                        child: Consumer<TrialStockProvider>(
-                          builder: (context, value, child) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      "Ledger Name : ",
-                                      style: TextStyle(
-                                        fontSize: 15.sp,
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        value.selectedProductCompany,
-                                        style: TextStyle(
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                                SizedBox(
-                                  height: 5.sp,
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      )
-                    : SizedBox(),
+               
                 Card(
                   elevation: 5,
                   child: LimitedBox(
@@ -289,10 +248,12 @@ class _TrialStockState extends State<TrialStock> {
                                   DataColumn(
                                       label: SizedBox(
                                           child: Text(
-                                    'Opening Qunatity',
+                                    'OP Qty',
                                     style: GoogleFonts.acme(
                                         color: Colors.white, fontSize: 15.sp),
-                                  ))),
+                                  )),
+                                  
+                                  numeric: true),
                                   DataColumn(
                                       label: SizedBox(
                                           child: Text(
@@ -323,7 +284,7 @@ class _TrialStockState extends State<TrialStock> {
                                 ],
                                 rows: _trialStockList.map((data) {
                                   int index = _trialStockList.indexOf(data) + 1;
-                                
+
                                   totalBalance += data.balance;
                                   return DataRow(cells: [
                                     DataCell(SizedBox(
@@ -346,6 +307,7 @@ class _TrialStockState extends State<TrialStock> {
                                       data.openingQuantity.toString(),
                                       style:
                                           GoogleFonts.aBeeZee(fontSize: 14.sp),
+                                          textAlign: TextAlign.right,
                                     )))),
                                     DataCell(SizedBox(
                                         child: Text(
@@ -389,8 +351,8 @@ class _TrialStockState extends State<TrialStock> {
                       ),
                       hasDataToDisplay
                           ? Positioned(
-                              right: 10,
-                              bottom: 2,
+                              right: 10.sp,
+                              bottom: 2.sp,
                               child: ElevatedButton(
                                   onPressed: () {
                                     if (_scrollController.position.pixels ==
@@ -486,8 +448,8 @@ class _TrialStockState extends State<TrialStock> {
             builder: (context, value, child) {
               var selectedBranch = value.selectedBranch;
               var name = value.selectedProductCompany;
-              var productGroupName=value.selectedProductGroup;
-              var productName=value.selectedProductName;
+              var productGroupName = value.selectedProductGroup;
+              var productName = value.selectedProductName;
               return FractionallySizedBox(
                 heightFactor: 0.8,
                 child: SingleChildScrollView(
@@ -514,12 +476,16 @@ class _TrialStockState extends State<TrialStock> {
                               child: Column(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    "Date From",
-                                    style: GoogleFonts.aBeeZee(
-                                        color: Colors.black54, fontSize: 16.sp),
+                                  Padding(
+                                    padding:  EdgeInsets.only(left: 10.sp),
+                                    child: Text(
+                                      "Date From",
+                                      style: GoogleFonts.aBeeZee(
+                                          color: Colors.black54,
+                                          fontSize: 16.sp),
+                                    ),
                                   ),
                                   SizedBox(
                                     height: 10.sp,
@@ -602,12 +568,16 @@ class _TrialStockState extends State<TrialStock> {
                               child: Column(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(
-                                    "Date To",
-                                    style: GoogleFonts.aBeeZee(
-                                        color: Colors.black54, fontSize: 16.sp),
+                                  Padding(
+                                    padding:  EdgeInsets.only(right: 10.sp),
+                                    child: Text(
+                                      "Date To",
+                                      style: GoogleFonts.aBeeZee(
+                                          color: Colors.black54,
+                                          fontSize: 16.sp),
+                                    ),
                                   ),
                                   SizedBox(
                                     height: 10.sp,
@@ -690,21 +660,25 @@ class _TrialStockState extends State<TrialStock> {
                         ),
                       ),
                       Padding(
-                        padding: EdgeInsets.fromLTRB(10, 0, 10, 10),
+                        padding: EdgeInsets.fromLTRB(10.sp, 0, 10.sp, 10.sp),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Padding(
-                              padding: EdgeInsets.all(10.0.sp),
+                              padding: EdgeInsets.fromLTRB(10.sp, 0, 10.sp, 0),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    "Branch",
-                                    style: GoogleFonts.aBeeZee(
-                                        color: Colors.black54, fontSize: 16.sp),
+                                  Padding(
+                                    padding:  EdgeInsets.only(left: 10.sp),
+                                    child: Text(
+                                      "Branch",
+                                      style: GoogleFonts.aBeeZee(
+                                          color: Colors.black54,
+                                          fontSize: 16.sp),
+                                    ),
                                   ),
                                   SizedBox(
                                     height: 10.sp,
@@ -747,16 +721,20 @@ class _TrialStockState extends State<TrialStock> {
                               ),
                             ),
                             Padding(
-                              padding: EdgeInsets.all(10.0.sp),
+                              padding: EdgeInsets.fromLTRB(10.sp, 0, 10.sp, 0),
                               child: Column(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(
-                                    "Blnc Type",
-                                    style: GoogleFonts.aBeeZee(
-                                        color: Colors.black54, fontSize: 16.sp),
+                                  Padding(
+                                    padding:  EdgeInsets.only(right: 10.sp),
+                                    child: Text(
+                                      "Blnc Type",
+                                      style: GoogleFonts.aBeeZee(
+                                          color: Colors.black54,
+                                          fontSize: 16.sp),
+                                    ),
                                   ),
                                   SizedBox(
                                     height: 10.sp,
@@ -806,7 +784,7 @@ class _TrialStockState extends State<TrialStock> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(left: 30),
+                            padding:  EdgeInsets.only(left: 30.sp),
                             child: Text(
                               "Product Company",
                               style: GoogleFonts.aBeeZee(
@@ -821,7 +799,7 @@ class _TrialStockState extends State<TrialStock> {
                               productCompany();
                             },
                             child: Padding(
-                              padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                              padding: EdgeInsets.fromLTRB(20.sp, 0, 20.sp, 0),
                               child: Container(
                                 alignment: Alignment.center,
                                 width: double.infinity,
@@ -857,13 +835,13 @@ class _TrialStockState extends State<TrialStock> {
                         ],
                       ),
                       const SizedBox(
-                        height: 10,
+                        height: 15,
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(left: 30),
+                            padding:  EdgeInsets.only(left: 30.sp),
                             child: Text(
                               "Product Group",
                               style: GoogleFonts.aBeeZee(
@@ -878,7 +856,7 @@ class _TrialStockState extends State<TrialStock> {
                               productGroup();
                             },
                             child: Padding(
-                              padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                              padding: EdgeInsets.fromLTRB(20.sp, 0, 20.sp, 0),
                               child: Container(
                                 alignment: Alignment.center,
                                 width: double.infinity,
@@ -913,8 +891,6 @@ class _TrialStockState extends State<TrialStock> {
                           ),
                         ],
                       ),
-
-
                       SizedBox(
                         height: 15,
                       ),
@@ -922,7 +898,7 @@ class _TrialStockState extends State<TrialStock> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(left: 30),
+                            padding:  EdgeInsets.only(left: 30.sp),
                             child: Text(
                               "Product",
                               style: GoogleFonts.aBeeZee(
@@ -937,7 +913,7 @@ class _TrialStockState extends State<TrialStock> {
                               productDetails();
                             },
                             child: Padding(
-                              padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                              padding: EdgeInsets.fromLTRB(20.sp, 0, 20.sp, 0),
                               child: Container(
                                 alignment: Alignment.center,
                                 width: double.infinity,
@@ -972,21 +948,25 @@ class _TrialStockState extends State<TrialStock> {
                           ),
                         ],
                       ),
+                      SizedBox(
+                        height: 10.sp,
+                      ),
                       Padding(
                         padding: EdgeInsets.all(10.0.sp),
                         child: Consumer<TrialStockProvider>(
                           builder: (context, value, child) {
                             return CustomButtom(
                                 onPressed: () async {
-                                 
                                   hasPressed = true;
                                   String balanceType =
                                       value.selectedBalanceType.toString();
                                   int selectedBranchId = value.selectedBranchId;
                                   int selectedProductCompanyId =
                                       value.selectedProductCompanyId;
-                                  int selectedProductGroupId=value.selectedProductGroupId;
-                                  int selectedProductId=value.selectedProductNameId;
+                                  int selectedProductGroupId =
+                                      value.selectedProductGroupId;
+                                  int selectedProductId =
+                                      value.selectedProductNameId;
                                   String formattedFromDate =
                                       value.selectedDateFrom != null
                                           ? DateFormat('yyyy-MM-dd')
@@ -1012,7 +992,7 @@ class _TrialStockState extends State<TrialStock> {
                                   try {
                                     trialStockService
                                         .getTrialStockList(
-                                     formattedFromDate,
+                                      formattedFromDate,
                                       formattedToDate,
                                       balanceType,
                                       selectedBranchId,
@@ -1048,8 +1028,7 @@ class _TrialStockState extends State<TrialStock> {
         });
   }
 
-
-   productCompany() {
+  productCompany() {
     showModalBottomSheet(
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.only(
@@ -1496,28 +1475,35 @@ class _TrialStockState extends State<TrialStock> {
                       ),
                     ),
                     pw.SizedBox(
-                      width: screenWidth * 0.37,
+                      width: screenWidth * 0.33,
                       child: pw.Text(
                         details.productName,
                         style: pw.TextStyle(fontSize: font8sp),
                       ),
                     ),
                     pw.SizedBox(
-                      width: screenWidth * 0.2,
+                      width: screenWidth * 0.18,
+                      child: pw.Text(
+                        details.openingQuantity.toStringAsFixed(2),
+                        style: pw.TextStyle(fontSize: font8sp),
+                      ),
+                    ),
+                    pw.SizedBox(
+                      width: screenWidth * 0.18,
                       child: pw.Text(
                         details.inQuantity.toStringAsFixed(2),
                         style: pw.TextStyle(fontSize: font8sp),
                       ),
                     ),
                     pw.SizedBox(
-                      width: screenWidth * 0.2,
+                      width: screenWidth * 0.18,
                       child: pw.Text(
-                        details.inQuantity.toStringAsFixed(2),
+                        details.outQuantity.toStringAsFixed(2),
                         style: pw.TextStyle(fontSize: font8sp),
                       ),
                     ),
                     pw.SizedBox(
-                        width: screenWidth * 0.25,
+                        width: screenWidth * 0.2,
                         child: pw.Row(
                             mainAxisAlignment: pw.MainAxisAlignment.end,
                             children: [
@@ -1586,7 +1572,7 @@ class _TrialStockState extends State<TrialStock> {
                         ),
                       ),
                       pw.SizedBox(
-                        width: screenWidth * 0.37,
+                        width: screenWidth * 0.33,
                         child: pw.Text(
                           "Product",
                           style: pw.TextStyle(
@@ -1595,7 +1581,16 @@ class _TrialStockState extends State<TrialStock> {
                         ),
                       ),
                       pw.SizedBox(
-                        width: screenWidth * 0.2,
+                        width: screenWidth * 0.18,
+                        child: pw.Text(
+                          "OP Qty",
+                          style: pw.TextStyle(
+                              fontSize: font8sp,
+                              fontWeight: pw.FontWeight.bold),
+                        ),
+                      ),
+                      pw.SizedBox(
+                        width: screenWidth * 0.18,
                         child: pw.Text(
                           "In Qty",
                           style: pw.TextStyle(
@@ -1604,7 +1599,7 @@ class _TrialStockState extends State<TrialStock> {
                         ),
                       ),
                       pw.SizedBox(
-                        width: screenWidth * 0.2,
+                        width: screenWidth * 0.18,
                         child: pw.Text(
                           "Out Qty",
                           style: pw.TextStyle(
@@ -1613,7 +1608,7 @@ class _TrialStockState extends State<TrialStock> {
                         ),
                       ),
                       pw.SizedBox(
-                          width: screenWidth * 0.25,
+                          width: screenWidth * 0.2,
                           child: pw.Row(
                               mainAxisAlignment: pw.MainAxisAlignment.end,
                               children: [
