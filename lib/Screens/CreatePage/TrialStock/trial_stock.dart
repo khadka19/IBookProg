@@ -39,6 +39,7 @@ class TrialStock extends StatefulWidget {
 class _TrialStockState extends State<TrialStock> {
   bool _shouldResetState = true;
   bool hasPressed = false;
+  bool hasPressedBranch = false;
   bool hasDataToDisplay = false;
   final ScrollController _scrollController = ScrollController();
   static const fontFamily = "times new roman";
@@ -48,7 +49,7 @@ class _TrialStockState extends State<TrialStock> {
   List<ProductCompanyModel> _productCompanyList = [];
   List<TsProductGroupModelDetails> _productGroupList = [];
   List<ProductModel> _productList = [];
-
+  int _branchIdOfHeadOfficeId = 0;
   List<TrialStockBranchDetails> _trialStockBranchList = [];
   LRFiscalDateService lrFiscalDateService = LRFiscalDateService();
   MyServiceOrder myServiceOrder = MyServiceOrder();
@@ -119,6 +120,13 @@ class _TrialStockState extends State<TrialStock> {
 
     trialStockService.getTrialStockBranch().then((branchList) async {
       _trialStockBranchList = branchList; // Store the fetched customer data
+
+      for (var branch in _trialStockBranchList) {
+        if (branch.name == "Head Office") {
+          _branchIdOfHeadOfficeId = branch.id;
+          break; // Break the loop once the branch with name "Head Office" is found
+        }
+      }
     });
 
     myServiceOrder.getProductCompanyDetails().then((productCompanyData) async {
@@ -193,7 +201,6 @@ class _TrialStockState extends State<TrialStock> {
                 SizedBox(
                   height: 10.sp,
                 ),
-               
                 Card(
                   elevation: 5,
                   child: LimitedBox(
@@ -248,12 +255,12 @@ class _TrialStockState extends State<TrialStock> {
                                   DataColumn(
                                       label: SizedBox(
                                           child: Text(
-                                    'OP Qty',
-                                    style: GoogleFonts.acme(
-                                        color: Colors.white, fontSize: 15.sp),
-                                  )),
-                                  
-                                  numeric: true),
+                                        'OP Qty',
+                                        style: GoogleFonts.acme(
+                                            color: Colors.white,
+                                            fontSize: 15.sp),
+                                      )),
+                                      numeric: true),
                                   DataColumn(
                                       label: SizedBox(
                                           child: Text(
@@ -307,7 +314,7 @@ class _TrialStockState extends State<TrialStock> {
                                       data.openingQuantity.toString(),
                                       style:
                                           GoogleFonts.aBeeZee(fontSize: 14.sp),
-                                          textAlign: TextAlign.right,
+                                      textAlign: TextAlign.right,
                                     )))),
                                     DataCell(SizedBox(
                                         child: Text(
@@ -479,7 +486,7 @@ class _TrialStockState extends State<TrialStock> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Padding(
-                                    padding:  EdgeInsets.only(left: 10.sp),
+                                    padding: EdgeInsets.only(left: 10.sp),
                                     child: Text(
                                       "Date From",
                                       style: GoogleFonts.aBeeZee(
@@ -571,7 +578,7 @@ class _TrialStockState extends State<TrialStock> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Padding(
-                                    padding:  EdgeInsets.only(right: 10.sp),
+                                    padding: EdgeInsets.only(right: 10.sp),
                                     child: Text(
                                       "Date To",
                                       style: GoogleFonts.aBeeZee(
@@ -672,7 +679,7 @@ class _TrialStockState extends State<TrialStock> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Padding(
-                                    padding:  EdgeInsets.only(left: 10.sp),
+                                    padding: EdgeInsets.only(left: 10.sp),
                                     child: Text(
                                       "Branch",
                                       style: GoogleFonts.aBeeZee(
@@ -700,7 +707,7 @@ class _TrialStockState extends State<TrialStock> {
                                               child: Text(
                                                 selectedBranch.isNotEmpty
                                                     ? selectedBranch
-                                                    : "Select Branch",
+                                                    : "Head Office",
                                                 style: GoogleFonts.adamina(
                                                     color: Colors.black,
                                                     fontSize: 16.sp),
@@ -728,7 +735,7 @@ class _TrialStockState extends State<TrialStock> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Padding(
-                                    padding:  EdgeInsets.only(right: 10.sp),
+                                    padding: EdgeInsets.only(right: 10.sp),
                                     child: Text(
                                       "Blnc Type",
                                       style: GoogleFonts.aBeeZee(
@@ -784,7 +791,7 @@ class _TrialStockState extends State<TrialStock> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding:  EdgeInsets.only(left: 30.sp),
+                            padding: EdgeInsets.only(left: 30.sp),
                             child: Text(
                               "Product Company",
                               style: GoogleFonts.aBeeZee(
@@ -841,7 +848,7 @@ class _TrialStockState extends State<TrialStock> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding:  EdgeInsets.only(left: 30.sp),
+                            padding: EdgeInsets.only(left: 30.sp),
                             child: Text(
                               "Product Group",
                               style: GoogleFonts.aBeeZee(
@@ -898,7 +905,7 @@ class _TrialStockState extends State<TrialStock> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding:  EdgeInsets.only(left: 30.sp),
+                            padding: EdgeInsets.only(left: 30.sp),
                             child: Text(
                               "Product",
                               style: GoogleFonts.aBeeZee(
@@ -952,71 +959,134 @@ class _TrialStockState extends State<TrialStock> {
                         height: 10.sp,
                       ),
                       Padding(
-                        padding: EdgeInsets.all(10.0.sp),
-                        child: Consumer<TrialStockProvider>(
-                          builder: (context, value, child) {
-                            return CustomButtom(
-                                onPressed: () async {
-                                  hasPressed = true;
-                                  String balanceType =
-                                      value.selectedBalanceType.toString();
-                                  int selectedBranchId = value.selectedBranchId;
-                                  int selectedProductCompanyId =
-                                      value.selectedProductCompanyId;
-                                  int selectedProductGroupId =
-                                      value.selectedProductGroupId;
-                                  int selectedProductId =
-                                      value.selectedProductNameId;
-                                  String formattedFromDate =
-                                      value.selectedDateFrom != null
-                                          ? DateFormat('yyyy-MM-dd')
-                                              .format(value.selectedDateFrom!)
-                                          : DateFormat('yyyy-MM-dd').format(
-                                              _fiscalDateList[0].finStartDate);
+                        padding: EdgeInsets.fromLTRB(10.sp, 0, 10.sp, 0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.all(10.0.sp),
+                              child: Consumer<TrialStockProvider>(
+                                builder: (context, value, child) {
+                                  return SizedBox(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.42,
+                                    child: CustomButtom(
+                                        onPressed: () async {
+                                          hasPressed = true;
+                                          String balanceType = value
+                                              .selectedBalanceType
+                                              .toString();
 
-                                  String formattedToDate =
-                                      value.selectedDateTo != null
-                                          ? DateFormat('yyyy-MM-dd')
-                                              .format(value.selectedDateTo!)
-                                          : DateFormat('yyyy-MM-dd').format(
-                                              _fiscalDateList[0].finEndDate);
+                                          int selectedBranchId =
+                                              hasPressedBranch
+                                                  ? value.selectedBranchId
+                                                  : _branchIdOfHeadOfficeId;
+                                          int selectedProductCompanyId =
+                                              value.selectedProductCompanyId;
+                                          int selectedProductGroupId =
+                                              value.selectedProductGroupId;
+                                          int selectedProductId =
+                                              value.selectedProductNameId;
+                                          String formattedFromDate = value
+                                                      .selectedDateFrom !=
+                                                  null
+                                              ? DateFormat('yyyy-MM-dd').format(
+                                                  value.selectedDateFrom!)
+                                              : DateFormat('yyyy-MM-dd').format(
+                                                  _fiscalDateList[0]
+                                                      .finStartDate);
 
-                                  showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return const Center(
-                                          child: CircularProgressIndicator(),
-                                        );
-                                      });
-                                  await Future.delayed(Duration(seconds: 1));
-                                  try {
-                                    trialStockService
-                                        .getTrialStockList(
-                                      formattedFromDate,
-                                      formattedToDate,
-                                      balanceType,
-                                      selectedBranchId,
-                                      selectedProductCompanyId,
-                                      selectedProductGroupId,
-                                      selectedProductId,
-                                    )
-                                        .then((data) async {
-                                      setState(() {
-                                        _trialStockList =
-                                            data; // Store the fetched customer data
-                                        hasDataToDisplay =
-                                            _trialStockList.isNotEmpty;
-                                      });
-                                    });
-                                  } finally {
-                                    Navigator.pop(context);
-                                  }
+                                          String formattedToDate = value
+                                                      .selectedDateTo !=
+                                                  null
+                                              ? DateFormat('yyyy-MM-dd')
+                                                  .format(value.selectedDateTo!)
+                                              : DateFormat('yyyy-MM-dd').format(
+                                                  _fiscalDateList[0]
+                                                      .finEndDate);
+
+                                          showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return const Center(
+                                                  child:
+                                                      CircularProgressIndicator(),
+                                                );
+                                              });
+                                          await Future.delayed(
+                                              Duration(seconds: 1));
+                                          try {
+                                            trialStockService
+                                                .getTrialStockList(
+                                              formattedFromDate,
+                                              formattedToDate,
+                                              balanceType,
+                                              selectedBranchId,
+                                              selectedProductCompanyId,
+                                              selectedProductGroupId,
+                                              selectedProductId,
+                                            )
+                                                .then((data) async {
+                                              setState(() {
+                                                _trialStockList =
+                                                    data; // Store the fetched customer data
+                                                hasDataToDisplay =
+                                                    _trialStockList.isNotEmpty;
+                                              });
+                                            });
+                                          } finally {
+                                            Navigator.pop(context);
+                                          }
+                                        },
+                                        buttonColor: AppColors.kPrimaryColor,
+                                        buttonText: "Apply",
+                                        elevation: 5,
+                                        context: context),
+                                  );
                                 },
-                                buttonColor: AppColors.kPrimaryColor,
-                                buttonText: "Apply",
-                                elevation: 5,
-                                context: context);
-                          },
+                              ),
+                            ),
+                            SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.42,
+                              child: Padding(
+                                padding: EdgeInsets.all(10.0.sp),
+                                child: Consumer<TrialStockProvider>(
+                                  builder: (context, value, child) {
+                                    return CustomButtom(
+                                        onPressed: () async {
+                                          value
+                                              .selectedProductCompany = '';
+                                          value
+                                              .selectedProductCompanyId = 0;
+                                          value.selectedBranch =
+                                              '';
+                                          value.selectedBranchId =
+                                              0;
+                                          value
+                                              .selectedBalanceType = 'Positive';
+                                          value
+                                              .selectedProductGroup = '';
+                                          value
+                                              .selectedProductGroupId = 0;
+                                          value
+                                              .selectedProductName = '';
+                                          value
+                                              .selectedProductNameId = 0;
+                                          _shouldResetState = false;
+                                          value.selectedDateFrom =
+                                              null;
+                                          value.selectedDateTo =
+                                              null;
+                                        },
+                                        buttonColor: Colors.black38,
+                                        buttonText: "Clear",
+                                        elevation: 5,
+                                        context: context);
+                                  },
+                                ),
+                              ),
+                            )
+                          ],
                         ),
                       )
                     ],
@@ -1150,7 +1220,7 @@ class _TrialStockState extends State<TrialStock> {
                                               value.selectedProductGroup =
                                                   data.name;
                                               value.selectedProductGroupId =
-                                                  data.id!;
+                                                  data.id;
                                               // ignore: use_build_context_synchronously
                                               Navigator.pop(context);
                                             },
@@ -1228,7 +1298,7 @@ class _TrialStockState extends State<TrialStock> {
                                               value.selectedProductName =
                                                   data.productName;
                                               value.selectedProductNameId =
-                                                  data.id!;
+                                                  data.id;
                                               // ignore: use_build_context_synchronously
                                               Navigator.pop(context);
                                             },
@@ -1303,6 +1373,7 @@ class _TrialStockState extends State<TrialStock> {
                                         builder: (context, value, child) {
                                           return InkWell(
                                             onTap: () async {
+                                              hasPressedBranch = true;
                                               value.selectedBranch =
                                                   trialStockBranch.name;
                                               value.selectedBranchId =
@@ -1381,9 +1452,10 @@ class _TrialStockState extends State<TrialStock> {
                                         children: [
                                           Text(
                                             balnceTypeItems[index],
-                                            style: TextStyle(fontSize: 17),
+                                            style:
+                                                const TextStyle(fontSize: 17),
                                           ),
-                                          Divider(
+                                          const Divider(
                                             thickness: 1,
                                           )
                                         ],

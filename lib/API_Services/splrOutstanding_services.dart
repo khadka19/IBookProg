@@ -28,7 +28,7 @@ class SplrOutstandingServices{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("Suppliers not found");
       }
     } catch (e) {
       Utilities.showToastMessage("Error :${e.toString()}", AppColors.warningColor);
@@ -57,7 +57,7 @@ class SplrOutstandingServices{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("MR not found");
       }
     } catch (e) {
       Utilities.showToastMessage("Error :${e.toString()}", AppColors.warningColor);
@@ -85,7 +85,7 @@ class SplrOutstandingServices{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("Area not found");
       }
     } catch (e) {
        Utilities.showToastMessage("Error :${e.toString()}", AppColors.warningColor);
@@ -113,7 +113,7 @@ class SplrOutstandingServices{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("SupplierList not found");
       }
     } catch (e) {
        Utilities.showToastMessage("Error :${e.toString()}", AppColors.warningColor);

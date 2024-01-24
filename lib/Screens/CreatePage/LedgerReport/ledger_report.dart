@@ -43,8 +43,7 @@ class _LedgerReportState extends State<LedgerReport> {
   final pdf = pw.Document();
   late File? file = null;
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  LedgerDateProvider? ledgerDateProvider;
-  CustomerProviderLR? customerProviderLR;
+  LedgerProvider? ledgerDateProvider;
   pdfWidgets.Font? myFontFamily;
   final ScrollController _scrollController = ScrollController();
   bool hasDataToDisplay = false;
@@ -117,12 +116,11 @@ class _LedgerReportState extends State<LedgerReport> {
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height;
-    final customerProviderLR = Provider.of<CustomerProviderLR>(context);
-     final ledgerDateProvider = Provider.of<LedgerDateProvider>(context);
+     final ledgerProvider = Provider.of<LedgerProvider>(context);
     if (_shouldResetState) {
-      customerProviderLR.ledgerName="";
-      ledgerDateProvider.selectedDateFrom=null;
-      ledgerDateProvider.selectedDateTo=null;
+      ledgerProvider.ledgerName="";
+      ledgerProvider.selectedDateFrom=null;
+      ledgerProvider.selectedDateTo=null;
       _shouldResetState = false;
     }
     return Scaffold(
@@ -140,8 +138,8 @@ class _LedgerReportState extends State<LedgerReport> {
                     totalCrAmount = ledgerOpeningCr;
                     currentBalance = ledgerOpeningDr - ledgerOpeningCr;
 
-                    if (customerProviderLR != null &&
-                        customerProviderLR.ledgerName.isNotEmpty) {
+                    if (ledgerProvider != null &&
+                        ledgerProvider.ledgerName.isNotEmpty) {
                       _displayPdf();
                     } else {
                       // Show an error message if companyName is null or empty
@@ -173,7 +171,7 @@ class _LedgerReportState extends State<LedgerReport> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Consumer<CustomerProviderLR>(
+                            Consumer<LedgerProvider>(
                               builder: (context, value, child) {
                                 return hasDataToDisplay
                                     ? Row(
@@ -200,7 +198,7 @@ class _LedgerReportState extends State<LedgerReport> {
                               height: 5,
                             ),
                             
-                            Consumer<LedgerDateProvider>(
+                            Consumer<LedgerProvider>(
                                 builder: (context, value, child) {
                               String dateString =
                                   "${value.selectedDateFrom != null ? NepaliDateConverter.convertToNepaliDate(value.selectedDateFrom!) : (_fiscalDateList.isNotEmpty ? NepaliDateConverter.convertToNepaliDate(_fiscalDateList[0].finStartDate) : 'N/A')} || ${value.selectedDateTo != null ? NepaliDateConverter.convertToNepaliDate(value.selectedDateTo!) : (_fiscalDateList.isNotEmpty ? NepaliDateConverter.convertToNepaliDate(_fiscalDateList[0].finEndDate) : 'N/A')}";
@@ -672,7 +670,7 @@ class _LedgerReportState extends State<LedgerReport> {
                                SizedBox(
                                 height: 10.sp,
                               ),
-                              Consumer<LedgerDateProvider>(
+                              Consumer<LedgerProvider>(
                                 builder: (context, value, child) {
                                   return InkWell(
                                     onTap: () async {
@@ -752,7 +750,7 @@ class _LedgerReportState extends State<LedgerReport> {
                                SizedBox(
                                 height: 10.sp,
                               ),
-                              Consumer<LedgerDateProvider>(
+                              Consumer<LedgerProvider>(
                                 builder: (context, value, child) {
                                   return InkWell(
                                     onTap: () async {
@@ -836,7 +834,7 @@ class _LedgerReportState extends State<LedgerReport> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Consumer<CustomerProviderLR>(
+                              Consumer<LedgerProvider>(
                                 key: UniqueKey(),
                                 builder: (context, value, child) {
                                   var name = value.ledgerName;
@@ -867,84 +865,116 @@ class _LedgerReportState extends State<LedgerReport> {
                   ),
             
                   Padding(
-                    padding:  EdgeInsets.all(10.0.sp),
-                    child: Consumer<LedgerDateProvider>(
-                      builder: (context, value, child) {
-                        return CustomButtom(
-                            onPressed: () async {
-                              if (_selectedCusModel.id == 0) {
-                                // Ledger Name not selected
-                                Utilities.showToastMessage("Select a Ledger Name",
-                                    AppColors.warningColor);
-                                return;
-                              }
-            
-                              String formattedFromDate = value.selectedDateFrom !=
-                                      null
-                                  ? DateFormat('yyyy-MM-dd')
-                                      .format(value.selectedDateFrom!)
-                                  : DateFormat('yyyy-MM-dd')
-                                      .format(_fiscalDateList[0].finStartDate);
-            
-                              String formattedToDate =
-                                  value.selectedDateTo != null
-                                      ? DateFormat('yyyy-MM-dd')
-                                          .format(value.selectedDateTo!)
-                                      : DateFormat('yyyy-MM-dd')
-                                          .format(_fiscalDateList[0].finEndDate);
-            
-                              showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  });
-            
-                              try {
-                                var ledgerData =
-                                    await ledgerService.getLedgerById(
-                                        _selectedCusModel.id,
-                                        formattedFromDate,
-                                        formattedToDate);
-            
-                                setState(() {
-                                  _ledgerList = ledgerData
-                                      .where((element) =>
-                                          element.particulars != 'Opening')
-                                      .toList();
-                                  var ledgerOpening = ledgerData
-                                      .where((element) =>
-                                          element.particulars == 'Opening')
-                                      .firstOrNull;
-            
-                                  hasDataToDisplay = _ledgerList.isNotEmpty;
-                                  
-                                  ledgerOpeningDr = ledgerOpening!.drAmount;
-                                  ledgerOpeningCr = ledgerOpening.crAmount;
-                                  var diffAmount = ledgerOpening.drAmount -
-                                      ledgerOpening.crAmount;
-            
-                                  totalDrAmount = ledgerOpeningDr;
-                                  totalCrAmount = ledgerOpeningCr;
-                                  currentBalance =
-                                      ledgerOpeningDr - ledgerOpeningCr;
-            
-                                  if (diffAmount > 0) {
-                                    ledgerOpeningBalance = "$diffAmount Dr";
-                                  } else {
-                                    ledgerOpeningBalance = "$diffAmount Cr";
-                                  }
-                                });
-                              } finally {
-                                Navigator.pop(context);
-                              }
-                            },
-                            buttonColor: AppColors.kPrimaryColor,
-                            buttonText: "Apply",
-                            elevation: 5,
-                            context: context);
-                      },
+                    padding:  EdgeInsets.fromLTRB(10.sp, 0, 10.sp, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width*0.45,
+                          child: Padding(
+                            padding:  EdgeInsets.all(10.0.sp),
+                            child: Consumer<LedgerProvider>(
+                              builder: (context, value, child) {
+                                return CustomButtom(
+                                    onPressed: () async {
+                                      if (_selectedCusModel.id == 0) {
+                                        // Ledger Name not selected
+                                        Utilities.showToastMessage("Select a Ledger Name",
+                                            AppColors.warningColor);
+                                        return;
+                                      }
+                                    
+                                      String formattedFromDate = value.selectedDateFrom !=
+                                              null
+                                          ? DateFormat('yyyy-MM-dd')
+                                              .format(value.selectedDateFrom!)
+                                          : DateFormat('yyyy-MM-dd')
+                                              .format(_fiscalDateList[0].finStartDate);
+                                    
+                                      String formattedToDate =
+                                          value.selectedDateTo != null
+                                              ? DateFormat('yyyy-MM-dd')
+                                                  .format(value.selectedDateTo!)
+                                              : DateFormat('yyyy-MM-dd')
+                                                  .format(_fiscalDateList[0].finEndDate);
+                                    
+                                      showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return const Center(
+                                              child: CircularProgressIndicator(),
+                                            );
+                                          });
+                                    
+                                      try {
+                                        var ledgerData =
+                                            await ledgerService.getLedgerById(
+                                                _selectedCusModel.id,
+                                                formattedFromDate,
+                                                formattedToDate);
+                                    
+                                        setState(() {
+                                          _ledgerList = ledgerData
+                                              .where((element) =>
+                                                  element.particulars != 'Opening')
+                                              .toList();
+                                          var ledgerOpening = ledgerData
+                                              .where((element) =>
+                                                  element.particulars == 'Opening')
+                                              .firstOrNull;
+                                    
+                                          hasDataToDisplay = _ledgerList.isNotEmpty;
+                                          
+                                          ledgerOpeningDr = ledgerOpening!.drAmount;
+                                          ledgerOpeningCr = ledgerOpening.crAmount;
+                                          var diffAmount = ledgerOpening.drAmount -
+                                              ledgerOpening.crAmount;
+                                    
+                                          totalDrAmount = ledgerOpeningDr;
+                                          totalCrAmount = ledgerOpeningCr;
+                                          currentBalance =
+                                              ledgerOpeningDr - ledgerOpeningCr;
+                                    
+                                          if (diffAmount > 0) {
+                                            ledgerOpeningBalance = "$diffAmount Dr";
+                                          } else {
+                                            ledgerOpeningBalance = "$diffAmount Cr";
+                                          }
+                                        });
+                                      } finally {
+                                        Navigator.pop(context);
+                                      }
+                                    },
+                                    buttonColor: AppColors.kPrimaryColor,
+                                    buttonText: "Apply",
+                                    elevation: 5,
+                                    context: context);
+                              },
+                            ),
+                          ),
+                        ),
+
+                         SizedBox(
+                          width: MediaQuery.of(context).size.width*0.45,
+                          child: Padding(
+                            padding:  EdgeInsets.all(10.0.sp),
+                            child: Consumer<LedgerProvider>(
+                              builder: (context, value, child) {
+                                return CustomButtom(
+                                    onPressed: () async {
+                                     value.ledgerName="";
+                                     value.selectedDateFrom=null;
+                                    value.selectedDateTo=null;
+                                    },
+                                    buttonColor: Colors.black38,
+                                    buttonText: "Clear",
+                                    elevation: 5,
+                                    context: context);
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   )
                 ],
@@ -956,7 +986,7 @@ class _LedgerReportState extends State<LedgerReport> {
 
   customerName() {
     var itemProviderCustomerLR =
-        Provider.of<CustomerProviderLR>(context, listen: false);
+        Provider.of<LedgerProvider>(context, listen: false);
     showModalBottomSheet(
         shape:  RoundedRectangleBorder(
             borderRadius: BorderRadius.only(
@@ -1045,8 +1075,8 @@ class _LedgerReportState extends State<LedgerReport> {
     double font10sp = ScreenUtil().setSp(10.sp);
     double font8sp = ScreenUtil().setSp(8.sp);
     var screenWidth = MediaQuery.of(context).size.width;
-    final customerProviderLR =
-        Provider.of<CustomerProviderLR>(context, listen: false);
+    final ledgerProvider =
+        Provider.of<LedgerProvider>(context, listen: false);
 
     // Function to calculate available space on a page
     double availableSpaceOnPage(pw.Context pdfContext) {
@@ -1180,7 +1210,7 @@ class _LedgerReportState extends State<LedgerReport> {
                 ),
                 pw.SizedBox(height: 2.sp),
                 pw.Text(
-                  customerProviderLR.ledgerName,
+                  ledgerProvider.ledgerName,
                   style: pw.TextStyle(
                     fontSize: 12.sp,
                     fontWeight: pw.FontWeight.bold,

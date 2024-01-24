@@ -26,7 +26,7 @@ class LedgerService{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("Ledger not found");
       }
     } catch (e) {
        Utilities.showToastMessage(e.toString(), AppColors.warningColor); 

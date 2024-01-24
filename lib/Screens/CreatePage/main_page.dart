@@ -80,16 +80,16 @@ class _MainPageState extends State<MainPage> {
         return const LedgerReport(
           title: "Ledger Report",
         );
-        case 5:
+      case 5:
         return const CustomerOutstanding(
           title: "Customer Outstanding",
         );
-        case 6:
-        return  const SupplierOutstanding(
+      case 6:
+        return const SupplierOutstanding(
           title: "Supplier Outstanding",
         );
-        case 7:
-        return  const TrialStock(
+      case 7:
+        return const TrialStock(
           title: "Trial Stock",
         );
       case 8:
@@ -167,82 +167,105 @@ class _DrawerScreenState extends State<DrawerScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding:  EdgeInsets.fromLTRB(5.sp, 10.sp, 0, 5.sp),
+              padding: EdgeInsets.fromLTRB(5.sp, 10.sp, 0, 5.sp),
               child: drawerList(MaterialIcons.file_present, "Attendence", 0),
             ),
-            
-
-             ExpansionTile(
-              title:  Padding(
+            ExpansionTile(
+              title: Padding(
                 padding: EdgeInsets.fromLTRB(7.sp, 5.sp, 0, 10.sp),
                 child: Row(
                   children: [
-                    const Icon(FontAwesome.file_text_o,color: Colors.white,),
-                    SizedBox(width: 15.sp,),
-                    const Text("Transaction",style: TextStyle(color: Colors.white),),
+                    const Icon(
+                      FontAwesome.file_text_o,
+                      color: Colors.white,
+                    ),
+                    SizedBox(
+                      width: 15.sp,
+                    ),
+                    const Text(
+                      "Transaction",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ],
                 ),
               ),
               children: [
-                 Padding(
-              padding:  EdgeInsets.only(left: 20.sp),
-              child: drawerList(Entypo.eye, "Create Sales", 1),
-            ),
-             SizedBox(height: 3.sp,),
                 Padding(
-                  padding:  EdgeInsets.only(left: 20.sp),
+                  padding: EdgeInsets.only(left: 20.sp),
+                  child: drawerList(Entypo.eye, "Create Sales", 1),
+                ),
+                SizedBox(
+                  height: 3.sp,
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: 20.sp),
                   child: drawerList(FontAwesome.file_pdf_o, "Create Order", 2),
                 ),
-                
               ],
             ),
-          
             ExpansionTile(
-              title:  Padding(
+              title: Padding(
                 padding: EdgeInsets.fromLTRB(7.sp, 5.sp, 0, 10.sp),
                 child: Row(
                   children: [
-                    const Icon(Feather.file_plus,color: Colors.white,),
-                    SizedBox(width: 15.sp,),
-                    const Text("Reports",style: TextStyle(color: Colors.white),),
+                    const Icon(
+                      Feather.file_plus,
+                      color: Colors.white,
+                    ),
+                    SizedBox(
+                      width: 15.sp,
+                    ),
+                    const Text(
+                      "Reports",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ],
                 ),
               ),
               children: [
-                 Padding(
-              padding:  EdgeInsets.only(left: 20.sp),
-              child: drawerList(FontAwesome.file_pdf_o, "Order", 3),
-            ),
-            SizedBox(height: 3.sp,),
                 Padding(
-                  padding:  EdgeInsets.only(left: 20.sp),
+                  padding: EdgeInsets.only(left: 20.sp),
+                  child: drawerList(FontAwesome.file_pdf_o, "Order", 3),
+                ),
+                SizedBox(
+                  height: 3.sp,
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: 20.sp),
                   child: drawerList(FontAwesome.file_pdf_o, "Ledger", 4),
                 ),
-                 SizedBox(height: 3.sp,),
+                SizedBox(
+                  height: 3.sp,
+                ),
                 Padding(
-              padding:  EdgeInsets.only(left: 20.sp),
-              child: drawerList(FontAwesome.file_pdf_o, "Cus Outstanding", 5),
-            ),
-             SizedBox(height: 3.sp,),
-             Padding(
-               padding:  EdgeInsets.only(left: 20.sp),
-              child: drawerList(FontAwesome.file_pdf_o, "Splr Outstanding", 6),
-            ),
-
-             SizedBox(height: 3.sp,),
-             Padding(
-               padding:  EdgeInsets.only(left: 20.sp),
-              child: drawerList(FontAwesome.file_pdf_o, "Trial Stock", 7),
-            ),
+                  padding: EdgeInsets.only(left: 20.sp),
+                  child:
+                      drawerList(FontAwesome.file_pdf_o, "Cus Outstanding", 5),
+                ),
+                SizedBox(
+                  height: 3.sp,
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: 20.sp),
+                  child:
+                      drawerList(FontAwesome.file_pdf_o, "Splr Outstanding", 6),
+                ),
+                SizedBox(
+                  height: 3.sp,
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: 20.sp),
+                  child: drawerList(FontAwesome.file_pdf_o, "Trial Stock", 7),
+                ),
               ],
             ),
-
             Padding(
-              padding:  EdgeInsets.fromLTRB(5.sp, 15.sp, 0, 5.sp),
+              padding: EdgeInsets.fromLTRB(5.sp, 15.sp, 0, 5.sp),
               child: drawerList(MaterialCommunityIcons.contacts, "About Us", 8),
             ),
+           
             Padding(
-              padding:  EdgeInsets.fromLTRB(5.sp, 50.sp, 0, 5.sp),
+              padding: EdgeInsets.fromLTRB(5.sp, 50.sp, 0, 5.sp),
               child: drawerList(AntDesign.logout, "LogOut", 9),
             ),
           ],
@@ -259,7 +282,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
         });
       },
       child: Container(
-        margin:  EdgeInsets.only(left: 20.sp, bottom: 12.sp),
+        margin: EdgeInsets.only(left: 20.sp, bottom: 12.sp),
         child: Row(
           children: [
             Icon(

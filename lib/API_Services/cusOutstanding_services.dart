@@ -27,7 +27,7 @@ class CusOutstandingServices{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("Customer Outstanding not found");
       }
     } catch (e) {
      Utilities.showToastMessage(e.toString(), AppColors.warningColor); 
@@ -56,7 +56,7 @@ class CusOutstandingServices{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("MR not found");
       }
     } catch (e) {
       Utilities.showToastMessage(e.toString(), AppColors.warningColor); 
@@ -84,7 +84,7 @@ class CusOutstandingServices{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("Area List not found");
       }
     } catch (e) {
       Utilities.showToastMessage(e.toString(), AppColors.warningColor); 

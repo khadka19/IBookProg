@@ -974,59 +974,99 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
                   const SizedBox(
                     height: 10,
                   ),
+
+
                   Padding(
-                    padding: EdgeInsets.all(10.0.sp),
-                    child: Consumer<CustomerOutstandingProvider>(
-                      builder: (context, value, child) {
-                        return CustomButtom(
-                            onPressed: () async {
-                              if (_selectedCusModel.id == 0) {
-                                // Ledger Name not selected
-                                Utilities.showToastMessage(
-                                    "Select MR", AppColors.warningColor);
-                                return;
-                              }
+                    padding: EdgeInsets.fromLTRB(10.sp, 0, 10.sp, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                  
+                        SizedBox(
+                           width: MediaQuery.of(context).size.width*0.45,
+                          child: Padding(
+                            padding: EdgeInsets.all(10.0.sp),
+                            child: Consumer<CustomerOutstandingProvider>(
+                              builder: (context, value, child) {
+                                return CustomButtom(
+                                    onPressed: () async {
+                                      if (_selectedCusModel.id == 0) {
+                                        // Ledger Name not selected
+                                        Utilities.showToastMessage(
+                                            "Select Customer", AppColors.warningColor);
+                                        return;
+                                      }
+                                      var selectedDate = value.selectedAsOnDate;
+                                      int selectedMR = value.selectedMRID;
+                                      int selectedArea = value.selectedAreaID;
+                                      int selectedProductCompany =
+                                          value.selectedProductCompanyID;
+                                          
+                                      showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return const Center(
+                                              child: CircularProgressIndicator(),
+                                            );
+                                          });
+                                      await Future.delayed(Duration(seconds: 1));
+                                      try {
+                                        cusOutstandingServices
+                                            .getCusOutstanding(
+                                                selectedDate.toString(),
+                                                dropdownvalue,
+                                                _selectedCusModel.id,
+                                                selectedMR,
+                                                selectedArea,
+                                                selectedProductCompany)
+                                            .then((cusOutstandingData) async {
+                                          setState(() {
+                                            _cusOunstandingList =
+                                                cusOutstandingData; // Store the fetched customer data
+                                            hasDataToDisplay =
+                                                _cusOunstandingList.isNotEmpty;
+                                          });
+                                        });
+                                      } finally {
+                                        Navigator.pop(context);
+                                      }
+                                    },
+                                    buttonColor: AppColors.kPrimaryColor,
+                                    buttonText: "Apply",
+                                    elevation: 5,
+                                    context: context);
+                              },
+                            ),
+                          ),
+                        ),
 
-                              var selectedDate = value.selectedAsOnDate;
-                              int selectedMR = value.selectedMRID;
-                              int selectedArea = value.selectedAreaID;
-                              int selectedProductCompany =
-                                  value.selectedProductCompanyID;
-
-                              showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  });
-                              await Future.delayed(Duration(seconds: 1));
-                              try {
-                                cusOutstandingServices
-                                    .getCusOutstanding(
-                                        selectedDate.toString(),
-                                        dropdownvalue,
-                                        _selectedCusModel.id,
-                                        selectedMR,
-                                        selectedArea,
-                                        selectedProductCompany)
-                                    .then((cusOutstandingData) async {
-                                  setState(() {
-                                    _cusOunstandingList =
-                                        cusOutstandingData; // Store the fetched customer data
-                                    hasDataToDisplay =
-                                        _cusOunstandingList.isNotEmpty;
-                                  });
-                                });
-                              } finally {
-                                Navigator.pop(context);
-                              }
-                            },
-                            buttonColor: AppColors.kPrimaryColor,
-                            buttonText: "Apply",
-                            elevation: 5,
-                            context: context);
-                      },
+                         SizedBox(
+                          width: MediaQuery.of(context).size.width*0.45,
+                           child: Padding(
+                            padding: EdgeInsets.all(10.0.sp),
+                            child: Consumer<CustomerOutstandingProvider>(
+                              builder: (context, value, child) {
+                                return CustomButtom(
+                                    onPressed: () async {
+                                       value.clearSelection();
+                                       value.selectedMR = '';
+                                       value.selectedMRID = 0;
+                                       value.selectedProductCompany = '';
+                                       value.selectedProductCompanyID = 0;
+                                       value.selectedArea = '';
+                                       value.selectedAreaID = 0;
+                                       value.clearSelectionDate();
+                                       value.selectedAgeingOn = '';
+                                    },
+                                    buttonColor: Colors.black38,
+                                    buttonText: "Clear",
+                                    elevation: 5,
+                                    context: context);
+                              },
+                            ),
+                                                 ),
+                         ),
+                      ],
                     ),
                   )
                 ],

@@ -10,7 +10,7 @@ import 'package:petrolpump/models/trial_stock_model.dart';
 class TrialStockServices{
    Future<List<TrialStockModelDetails>> getTrialStockList( String fromDate,String toDate, String balanceType,[int? branchId,int? companyId,int? productGroupId,int? productId]) async {
     var baseURL = await UserPreference.getUserPreference("BaseURL");
-    Uri url = Uri.parse(baseURL + "/api/report/gettrialstockreport?fromDate=$fromDate&toDate=$toDate&balanceType=$balanceType&branch=$branchId&product=$companyId&productGroupId=$productGroupId&productId=$productId");
+    Uri url = Uri.parse(baseURL + "/api/report/gettrialstockreport?fromDate=$fromDate&toDate=$toDate&balanceType=$balanceType&branchId=$branchId&companyId=$companyId&productGroupId=$productGroupId&productId=$productId");
     var token = await UserPreference.getUserPreference("Token");
     try {
       final responseCustomer = await http.get(
@@ -27,7 +27,7 @@ class TrialStockServices{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("Trial List not found");
       }
     } catch (e) {
       Utilities.showToastMessage("Error :${e.toString()}", AppColors.warningColor);
@@ -58,7 +58,7 @@ class TrialStockServices{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("Branch not found");
       }
     } catch (e) {
       Utilities.showToastMessage(e.toString(), AppColors.warningColor); 
@@ -88,7 +88,7 @@ class TrialStockServices{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("Group not found");
       }
     } catch (e) {
       Utilities.showToastMessage(e.toString(), AppColors.warningColor); 

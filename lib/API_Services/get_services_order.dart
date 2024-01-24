@@ -23,7 +23,7 @@ class MyServiceOrder{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Customer not found");
+        throw Exception("Product Compnay not found");
       }
     } catch (e) {
       Utilities.showToastMessage(e.toString(), AppColors.warningColor); 

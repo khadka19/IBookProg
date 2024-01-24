@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:petrolpump/Provider/all_provider.dart';
 import 'package:petrolpump/models/customer_model.dart';
 
-class CustomerProviderLR extends ChangeNotifier {
 
-  List<CustomerModel> _customers = [];
+class LedgerProvider extends ChangeNotifier{
+
+ List<CustomerModel> _customers = [];
   List<CustomerModel> get customers => _customers;
   int cusId = 0;
   String ledgerName = "";
@@ -28,7 +29,7 @@ void resetState() {
     // You can also clear other relevant data.
   notifyListeners();
 }
-  void clearSelection() {
+  void clearSelectionCustomer() {
       _customers=[];
     cusId = 0;
     ledgerName = "";
@@ -38,8 +39,7 @@ void resetState() {
     productProvider.productList = [];
     notifyListeners();
   }
-}
-class LedgerDateProvider extends ChangeNotifier{
+
   DateTime? _selectedDateFrom=null;
   DateTime? get selectedDateFrom => _selectedDateFrom;
 
@@ -56,7 +56,7 @@ class LedgerDateProvider extends ChangeNotifier{
     notifyListeners(); // Ensure you notify listeners after updating dateTo
   }
 
-  clearSelection(){
+  clearSelectionDate(){
     selectedDateFrom=null;
     selectedDateTo=null;
   }

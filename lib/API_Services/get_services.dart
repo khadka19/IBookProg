@@ -27,7 +27,7 @@ class OrderServices{
           throw Exception(resData.message);
         }
       } else {
-        throw Exception("Product not found");
+        throw Exception("Order not found");
       }
     } catch (e) {
     Utilities.showToastMessage(e.toString(), AppColors.warningColor); 

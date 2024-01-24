@@ -12,7 +12,7 @@ class Utilities {
         timeInSecForIosWeb: 1,
         backgroundColor: isSuccess == true
             ?AppColors.successColor
-            : AppColors.warningColor,
+            : const Color.fromRGBO(209, 83, 74, 1),
         fontSize: 14.0 //message font size
         );
   }
