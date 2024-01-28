@@ -7,14 +7,14 @@ String userNameModelToJson(UserNameModel data) => json.encode(data.toJson());
 
 class UserNameModel {
   bool error;
-  String data;
+  String? data;
 
   UserNameModel({
     required this.error,
     required this.data,
   });
   factory UserNameModel.fromJson(Map<String, dynamic> json) => UserNameModel(
-        error: json["error"],
+        error: json["error"]??false,
         data: json["data"],
       );
   Map<String, dynamic> toJson() => {

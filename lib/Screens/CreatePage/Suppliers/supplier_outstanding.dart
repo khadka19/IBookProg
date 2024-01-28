@@ -1025,7 +1025,6 @@ class _SupplierOutstandingState extends State<SupplierOutstanding> {
                                             "Select Supplier", AppColors.warningColor);
                                         return;
                                       }
-                  
                                       var selectedDate = value.selectedAsOnDate;
                                       int selectedMR = value.selectedMRID;
                                       int selectedArea = value.selectedAreaID;

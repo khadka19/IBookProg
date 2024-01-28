@@ -898,7 +898,7 @@ class _TrialStockState extends State<TrialStock> {
                           ),
                         ],
                       ),
-                      SizedBox(
+                      const SizedBox(
                         height: 15,
                       ),
                       Column(
@@ -1013,10 +1013,10 @@ class _TrialStockState extends State<TrialStock> {
                                                       CircularProgressIndicator(),
                                                 );
                                               });
-                                          await Future.delayed(
-                                              Duration(seconds: 1));
+
                                           try {
-                                            trialStockService
+                                            // Load data asynchronously
+                                            var data = await trialStockService
                                                 .getTrialStockList(
                                               formattedFromDate,
                                               formattedToDate,
@@ -1025,14 +1025,12 @@ class _TrialStockState extends State<TrialStock> {
                                               selectedProductCompanyId,
                                               selectedProductGroupId,
                                               selectedProductId,
-                                            )
-                                                .then((data) async {
-                                              setState(() {
-                                                _trialStockList =
-                                                    data; // Store the fetched customer data
-                                                hasDataToDisplay =
-                                                    _trialStockList.isNotEmpty;
-                                              });
+                                            );
+
+                                            setState(() {
+                                              _trialStockList = data;
+                                              hasDataToDisplay =
+                                                  _trialStockList.isNotEmpty;
                                             });
                                           } finally {
                                             Navigator.pop(context);
@@ -1054,29 +1052,19 @@ class _TrialStockState extends State<TrialStock> {
                                   builder: (context, value, child) {
                                     return CustomButtom(
                                         onPressed: () async {
-                                          value
-                                              .selectedProductCompany = '';
-                                          value
-                                              .selectedProductCompanyId = 0;
-                                          value.selectedBranch =
-                                              '';
-                                          value.selectedBranchId =
-                                              0;
-                                          value
-                                              .selectedBalanceType = 'Positive';
-                                          value
-                                              .selectedProductGroup = '';
-                                          value
-                                              .selectedProductGroupId = 0;
-                                          value
-                                              .selectedProductName = '';
-                                          value
-                                              .selectedProductNameId = 0;
+                                          value.selectedProductCompany = '';
+                                          value.selectedProductCompanyId = 0;
+                                          value.selectedBranch = '';
+                                          value.selectedBranchId = 0;
+                                          value.selectedBalanceType =
+                                              'Positive';
+                                          value.selectedProductGroup = '';
+                                          value.selectedProductGroupId = 0;
+                                          value.selectedProductName = '';
+                                          value.selectedProductNameId = 0;
                                           _shouldResetState = false;
-                                          value.selectedDateFrom =
-                                              null;
-                                          value.selectedDateTo =
-                                              null;
+                                          value.selectedDateFrom = null;
+                                          value.selectedDateTo = null;
                                         },
                                         buttonColor: Colors.black38,
                                         buttonText: "Clear",
@@ -1195,7 +1183,7 @@ class _TrialStockState extends State<TrialStock> {
                     onChanged: (String? value) {
                       searchCusListner.value = value ?? "";
                     },
-                    hintText: 'Select Company',
+                    hintText: 'Select Product Group',
                   ),
                   Expanded(
                     child: _productGroupList.isEmpty
@@ -1273,7 +1261,7 @@ class _TrialStockState extends State<TrialStock> {
                     onChanged: (String? value) {
                       searchCusListner.value = value ?? "";
                     },
-                    hintText: 'Select Company',
+                    hintText: 'Select Product',
                   ),
                   Expanded(
                     child: _productList.isEmpty

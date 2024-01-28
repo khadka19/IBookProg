@@ -21,7 +21,6 @@ class AuthService {
     });
 
     var res = await http.get(url);
-
     try {
       if (res.statusCode == 200) {
         var data = postModelFromJson(res.body);
@@ -36,22 +35,24 @@ class AuthService {
   }
 
 //username method
-  getUserName(String name) async {
+  getUserName(String? name) async {
     Uri url = Uri.parse("${ApiURLs.licenseURL}?user=$name");
     try {
       var res = await http.get(url);
       if (res.statusCode == 200) {
         var data = userNameModelFromJson(res.body);
-        if (data.error == false) {
+        if (data.error == false && data.data!=null) {
           //for static
           // var staticURL ="http://194.163.134.186:2007"; 
         var staticURL= data.data;  
-          UserPreference.setUserPreference("BaseURL", staticURL);
+          UserPreference.setUserPreference("BaseURL", staticURL!);
           return staticURL;
+        }
+        else{
+         return;
         }
       }
 
-      print("Error");
     } catch (e) {
       Utilities.showToastMessage(e.toString(), AppColors.warningColor); 
       throw Exception(e.toString());

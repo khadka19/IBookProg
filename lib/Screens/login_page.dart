@@ -35,6 +35,8 @@ class _LoginPageState extends State<LoginPage> {
     return formatter.format(dateTime);
   }
 
+  bool _loadingCompanyList = false;
+  var circularLoading = CircularProgressIndicator();
   FocusNode emailFocusNode = FocusNode();
   FocusNode passwordFocusNode = FocusNode();
 
@@ -54,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     passwordVisible = true;
-    
+
     Future.delayed(const Duration(seconds: 2), () {
       setState(() {
         isLoadingFlagT = false; // Set isLoading to false after 3 seconds
@@ -262,27 +264,24 @@ class _LoginPageState extends State<LoginPage> {
                     Utilities.showSnackBar(
                         context, "Enter Username/Password", false);
                   } else {
-                    showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        });
-                  }
-                  await myService
-                      .getCompanyName(emailCtrl.text, PasswordCtrl.text)
-                      .then((data) {
                     setState(() {
-                      _companyList =
-                          data; // Store the fetched data in the customerList
-                      // _companyList.sort((a, b) => a.companyName.compareTo(b.companyName));
+                      _loadingCompanyList = true; // Set loading flag to true
                     });
-                  });
-                  // ignore: use_build_context_synchronously
-                  Navigator.pop(context);
-                  // ignore: use_build_context_synchronously
-                  showModalBottomSheet(
+                    try {
+                      var data = await myService.getCompanyName(
+                          emailCtrl.text, PasswordCtrl.text);
+                      setState(() {
+                        _companyList = data;
+                      });
+                    } finally {
+                      setState(() {
+                        _loadingCompanyList =
+                            false; // Set loading flag to false after loading completes
+                      });
+                    }
+
+                       // ignore: use_build_context_synchronously
+                       showModalBottomSheet(
                       isScrollControlled: true,
                       shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
@@ -381,6 +380,10 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         );
                       });
+                  }
+
+                  // ignore: use_build_context_synchronously
+               
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -396,7 +399,13 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    const Icon(
+                    _loadingCompanyList?Padding(
+                      padding: const EdgeInsets.only(right: 5),
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width*0.05,
+                        height: MediaQuery.of(context).size.height*0.03,
+                        child: CircularProgressIndicator()),
+                    ): Icon(
                       Icons.arrow_drop_down,
                       color: Colors.black,
                     )
