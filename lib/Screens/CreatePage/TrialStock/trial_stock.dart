@@ -976,7 +976,6 @@ class _TrialStockState extends State<TrialStock> {
                                           String balanceType = value
                                               .selectedBalanceType
                                               .toString();
-
                                           int selectedBranchId =
                                               hasPressedBranch
                                                   ? value.selectedBranchId

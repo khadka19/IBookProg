@@ -1009,9 +1009,9 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
                                               child: CircularProgressIndicator(),
                                             );
                                           });
-                                      await Future.delayed(Duration(seconds: 1));
+                                    
                                       try {
-                                        cusOutstandingServices
+                                      await  cusOutstandingServices
                                             .getCusOutstanding(
                                                 selectedDate.toString(),
                                                 dropdownvalue,
@@ -1402,6 +1402,7 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
     double font8sp = ScreenUtil().setSp(8.sp);
     var screenWidth = MediaQuery.of(context).size.width;
     final customerOutstandingProvider =
+        // ignore: use_build_context_synchronously
         Provider.of<CustomerOutstandingProvider>(context, listen: false);
     var date = DateFormat('yyyy-MM-dd')
         .format(customerOutstandingProvider.selectedAsOnDate!);
@@ -1670,7 +1671,7 @@ class _CustomerOutstandingState extends State<CustomerOutstanding> {
                   pw.Container(
                     width: double.maxFinite,
                     decoration:
-                        pw.BoxDecoration(color: PdfColor.fromInt(0xFFCCCCCC)),
+                        const pw.BoxDecoration(color: PdfColor.fromInt(0xFFCCCCCC)),
                     child: pw.Padding(
                       padding: pw.EdgeInsets.all(5.sp),
                       child: pw.Row(

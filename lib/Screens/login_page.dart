@@ -405,7 +405,7 @@ class _LoginPageState extends State<LoginPage> {
                         width: MediaQuery.of(context).size.width*0.05,
                         height: MediaQuery.of(context).size.height*0.03,
                         child: CircularProgressIndicator()),
-                    ): Icon(
+                    ): const Icon(
                       Icons.arrow_drop_down,
                       color: Colors.black,
                     )
