@@ -5,7 +5,7 @@ description: A new Flutter project.
 publish_to: 'none' # Remove  line if you wish to publish to pub.dev
 
 
-version: 1.0.0+1
+version: 2.0.0+2
 
 environment:
   sdk: '>=3.0.2 <4.0.0'
@@ -40,6 +40,7 @@ dependencies:
   geocoding: ^2.1.1
   awesome_notifications: ^0.8.2
   nepali_utils: ^3.0.4
+  background_fetch: ^1.2.2
   
   
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -195,7 +196,7 @@ class _CheckInSliderState extends State<CheckInSlider> {
                 onSubmit: () async {
                   try {
                     Future<Position> position =
-                        LocationUtilitiies.getCurrentPosition(context);
+                        LocationUtilitiies.currentPosition(context);
                     position.then((position) async {
                       AttendencePostModel model = AttendencePostModel(
                           id: 0,
@@ -253,13 +254,14 @@ class _CheckOutSliderAndCheckInTimeState
   void initState() {
     super.initState();
     // Start the timer for location updates every 2 minutes
-    locationUpdateTimer = Timer.periodic(const Duration(minutes: 16), (timer) {
+    locationUpdateTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
       try {
        LocationUtilitiies.updateUserLocation(context);
+       print("Timer executed at ${locationUpdateTimer}");
       } catch (e) {
         print("Error in _updateUserLocation: $e");
       }
-       print("Timer executed at ${DateTime.now()}");
+       
       // Call the function to update user location
     });
   }
@@ -344,7 +346,7 @@ class _CheckOutSliderAndCheckInTimeState
                     try {
                     // _updateUserLocation();
                       Future<Position> position =
-                          LocationUtilitiies.getCurrentPosition(context);
+                          LocationUtilitiies.currentPosition(context);
                       position.then((position) async {
                         AttendencePostModel model = AttendencePostModel(
                             id: 0,
@@ -356,6 +358,26 @@ class _CheckOutSliderAndCheckInTimeState
 
                         bool response =
                             await MyServiceAttendence().postAttendence(model);
+                            
+                               UserMovementPostModel userMovementPostModel =
+                          UserMovementPostModel(
+                              UserId: 0,
+                              MovementDateTime:CheckInSlider.formattedCheckInTime,
+                              Latitude: position.latitude,
+                              Longitude: position.longitude);
+
+                      MyServiceAttendence()
+                          .userMovementPost(userMovementPostModel)
+                          .then((userMovementResponse) {
+                        if (userMovementResponse) {
+                          // Successfully posted user's movement
+                          // You can add any notifications or UI updates here
+                        } else {
+                          // Handle the case where the post was not successful
+                        }
+                      });
+
+
                         // ignore: unrelated_type_equality_checks
                         if (response == true) {
                           // ignore: use_build_context_synchronously
@@ -483,20 +505,77 @@ class _CheckOutTimeState extends State<CheckOutTime> {
 class LocationUtilitiies {
   static late Location location; // Declare the Location object
   static Timer? locationUpdateTimer; // Timer for location updates
- 
 
- static updateUserLocation(BuildContext context) {
+ Future<void> initBackgroundFetch() async {
+    BackgroundFetch.configure(
+      BackgroundFetchConfig(
+        minimumFetchInterval: 2, // Set your desired interval in minutes
+        stopOnTerminate: false,
+        startOnBoot: true,
+        enableHeadless: true,
+        requiresBatteryNotLow: false,
+        requiresCharging: false,
+        requiresStorageNotLow: false,
+        requiresDeviceIdle: false,
+        requiredNetworkType: NetworkType.NONE,
+      ),
+      _backgroundFetchHandler,
+    );
+  }
+
+  void _backgroundFetchHandler(String taskId,BuildContext context)  {
     try {
+      // Update user location in the background
+     updateUserLocation(context);
+
+      // IMPORTANT: Task has finished, and we must call complete.
+      BackgroundFetch.finish(taskId);
+    } catch (e) {
+      print("Error in background fetch: $e");
+      // Handle error if necessary
+      BackgroundFetch.finish(taskId);
+    }
+  }
+
+
+//  static updateUserLocation(BuildContext context) async{
+//     try {
+      
+//      print("ayoooooooo");
+    
+//         UserMovementPostModel modelUserMovement = UserMovementPostModel(
+//           UserId: 0,
+//           MovementDateTime: CheckInSlider.formattedCheckInTime,
+//           Latitude:  84.1240,
+//           Longitude: 84.1240,
+//         );
+//         print("najik ayoooo");
+
+//         bool responseUserMovement =
+//             await MyServiceAttendence().userMovementPost(modelUserMovement);
+//             print("User movement response: $responseUserMovement");
+//         // Handle the response as needed
      
+//     } catch (e) {
+//       print("Error: $e");
+//     }
+//   }
+
+
+     static updateUserLocation(BuildContext context) {
+    try {
+     print("ayoooooooo");
       Future<Position> positionUserMovement =
-          LocationUtilitiies._getCurrentPositionUserMovement(context);
+          LocationUtilitiies.currentPosition(context);
       positionUserMovement.then((positionUserMovement) async {
+        print("Bichma ayooo");
         UserMovementPostModel modelUserMovement = UserMovementPostModel(
           UserId: 0,
           MovementDateTime: CheckInSlider.formattedCheckInTime,
           Latitude: positionUserMovement.latitude,
           Longitude: positionUserMovement.longitude,
         );
+        print("najik ayoooo");
         bool responseUserMovement =
             await MyServiceAttendence().userMovementPost(modelUserMovement);
             print("User movement response: $responseUserMovement");
@@ -508,39 +587,34 @@ class LocationUtilitiies {
   }
 
 
-  static Future<Position> getCurrentPosition(BuildContext context) async {
-    final hasPermission = await _handleLocationPermission(context);
-    if (!hasPermission) {
-      throw Exception("Location permission not granted.");
-    }
-    try {
-      final Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      return position;
-    } catch (e) {
-      throw Exception("Failed to get current position: $e");
-    }
-  }
 
-  static Future<Position> _getCurrentPositionUserMovement(
-      BuildContext context) async {
+  static Future<Position> currentPosition(BuildContext context) async {
+  try {
     final hasPermission = await _handleLocationPermission(context);
     if (!hasPermission) {
       throw Exception("Location permission not granted.");
     }
-    try {
-      final Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      return position;
-    } catch (e) {
-      throw Exception("Failed to get current position: $e");
-    }
+
+    print("Getting current position...");
+   final Position position = await Geolocator.getCurrentPosition(
+  desiredAccuracy: LocationAccuracy.high,
+);
+
+    
+    print("Got position: $position");
+    return position;
+  } catch (e) {
+    print("Failed to get current position: $e");
+    throw Exception("Failed to get current position: $e");
   }
+}
+
+
+
 
   static _handleLocationPermission(BuildContext context) async {
     bool serviceEnabled;
     LocationPermission permission;
-
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       // ignore: use_build_context_synchronously

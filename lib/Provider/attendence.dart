@@ -33,6 +33,15 @@ double _currentLatitude = 0.0;
     _currentLongitude = longitude;
     notifyListeners();
   }
+
+ double? _selectedLongLang=null;
+  double? get selectedLongLang => _selectedLongLang;
+
+  set selectedLongLang(double? date) {
+    _selectedLongLang = date;
+    notifyListeners(); // Ensure you notify listeners after updating dateFrom
+  }
+
 }
  
 

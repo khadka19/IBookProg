@@ -10,6 +10,7 @@ import 'package:petrolpump/Provider/ledger_provider.dart';
 import 'package:petrolpump/Provider/order_provider.dart';
 import 'package:petrolpump/Provider/splrOutstandingProvider.dart';
 import 'package:petrolpump/Provider/trial_stock_provider.dart';
+import 'package:petrolpump/Screens/CreatePage/attendence.dart';
 import 'package:petrolpump/Screens/splash_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -70,7 +71,7 @@ void main() async {
     ChangeNotifierProvider(create: (_) => SupplierOutstandingProvider()),
     ChangeNotifierProvider(create: (_) => TrialStockProvider()),
   ], child: const MyApp()));
-  // LocationUtilitiies().initBackgroundFetch();
+  LocationUtilitiies().initBackgroundFetch();
 }
 
 class MyApp extends StatefulWidget {

@@ -79,7 +79,7 @@ class _RemarksFormState extends State<RemarksForm> {
                       },
                     );
                     var position =
-                        LocationUtilitiies.getCurrentPosition(context);
+                        LocationUtilitiies.currentPosition(context);
                   
                     position.then((value) async {
                       var response = await orderProvider.postOrderData(
